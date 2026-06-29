@@ -118,6 +118,18 @@ npm run review                         # rebuild data/review.html from the queue
 | `npm run review` | Rebuild `data/review.html` from the current queue. |
 | `npm run package` | Build the shareable `job-applier-mac.tar.gz`. |
 
+## Tests
+
+```bash
+npm test            # unit suite (offline, no extra dependencies)
+npm run test:live   # optional: hits the live keyless APIs to confirm they still map
+```
+
+Tests live next to the code (`src/**/*.test.ts`) and use Node's built-in test runner via `tsx`, so
+there's nothing extra to install. They cover the engine logic — ranking/word-boundary matching,
+region targeting, normalization, location parsing, and the RSS/Atom feed parser. `npm test` is
+fully offline; live-API checks are kept separate in `npm run test:live`.
+
 ## Assisted apply (local only)
 
 The *Assisted apply* button launches a real browser (Playwright/Chromium) on **your** machine,

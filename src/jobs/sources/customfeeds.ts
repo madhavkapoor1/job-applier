@@ -44,8 +44,8 @@ export const customfeeds: JobSource = {
   },
 };
 
-/** Pull RSS <item> or Atom <entry> blocks and map each to a RawJob. */
-function parseFeed(xml: string, feedUrl: string): RawJob[] {
+/** Pull RSS <item> or Atom <entry> blocks and map each to a RawJob. Exported for tests. */
+export function parseFeed(xml: string, feedUrl: string): RawJob[] {
   const channelTitle = stripTags(tag(xml, "title")) || hostOf(feedUrl);
   const blocks = blockMatches(xml, "item").concat(blockMatches(xml, "entry"));
 

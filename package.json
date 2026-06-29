@@ -12,7 +12,9 @@
     "list": "tsx scripts/list.ts",
     "mark": "tsx scripts/mark.ts",
     "review": "tsx scripts/review.ts",
-    "package": "bash scripts/package.sh"
+    "package": "bash scripts/package.sh",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:live": "tsx scripts/smoke-sources.ts"
   },
   "dependencies": {
     "next": "16.2.6",

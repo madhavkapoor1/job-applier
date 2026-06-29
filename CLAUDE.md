@@ -35,12 +35,20 @@ npm run list -- --jobs                 # all discovered jobs; or --status queued
 npm run mark -- <jobId> applied "note" # set an application's status
 npm run review                         # rebuild data/review.html from the queue
 
+# Tests
+npm test                # unit suite — Node's built-in runner via tsx, no extra deps, offline
+npm run test:live       # opt-in: hits real APIs to confirm keyless sources still map (not in `npm test`)
+
 # Typecheck without building
 npx tsc --noEmit
 ```
 
-There is **no test suite**. Verify changes by running the relevant CLI script against live APIs,
-or `npm run build` (which typechecks) for web changes.
+**Tests** live next to the code as `src/**/*.test.ts`, using `node:test` + `node:assert` run through
+tsx (`node --import tsx --test`). They cover the pure engine logic (`rank`, `regions`, `normalize`,
+`locations`, the feed parser) and must pass offline — never add a network call to `npm test`; put
+live-API checks in `scripts/smoke-sources.ts` (`npm run test:live`) instead. Sources that hit the
+network aren't unit-tested; verify them with `npm run test:live` or `npm run discover`. `npm run
+build` still runs a full tsc typecheck for web changes.
 
 ## Architecture
 

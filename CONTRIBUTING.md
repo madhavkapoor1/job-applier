@@ -94,13 +94,16 @@ options it needs). If it's user-toggleable in the web form, also thread it throu
 
 ## Testing
 
-There's no unit-test suite. Verify against the live API:
+Unit tests live next to the code as `src/**/*.test.ts` (Node's built-in runner via tsx — no extra
+deps). Pure logic should have a test; network code is checked live.
 
 ```bash
+npm test                # unit suite (offline) — add tests for any pure logic you introduce
+npm run test:live       # hits the live keyless APIs; add your source here if it's keyless
 npm run discover        # runs every enabled source; check your board's line in the output
 npx tsc --noEmit        # typecheck
 ```
 
-Or exercise just your source with a tiny script that imports it and calls `fetch(config)` (see how
-the feed parser was validated). Then open a PR describing the board, whether it needs a key, and
-roughly what coverage it adds.
+If your source has pure mapping logic, factor it out (as `parseFeed` is in `customfeeds.ts`) and
+unit-test it with inline sample payloads — no network in `npm test`. Then open a PR describing the
+board, whether it needs a key, and roughly what coverage it adds.
