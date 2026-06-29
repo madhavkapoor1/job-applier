@@ -119,6 +119,8 @@ export interface SourcesConfig {
   arbeitnow?: { enabled: boolean };
   jobicy?: { enabled: boolean };
   himalayas?: { enabled: boolean };
+  /** Generic RSS/Atom feeds — paste any job-board feed URL, no code needed. */
+  customfeeds?: { urls: string[] };
   hackernews?: { enabled: boolean; monthsBack?: number };
   adzuna?: { enabled: boolean; country?: string };
   usajobs?: { enabled: boolean };

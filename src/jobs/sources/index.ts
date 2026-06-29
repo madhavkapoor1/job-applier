@@ -8,6 +8,7 @@ import { remoteok } from "./remoteok.ts";
 import { arbeitnow } from "./arbeitnow.ts";
 import { jobicy } from "./jobicy.ts";
 import { himalayas } from "./himalayas.ts";
+import { customfeeds } from "./customfeeds.ts";
 import { hackernews } from "./hackernews.ts";
 import { adzuna } from "./adzuna.ts";
 import { usajobs } from "./usajobs.ts";
@@ -30,6 +31,7 @@ export const ALL_SOURCES: JobSource[] = [
   arbeitnow,
   jobicy,
   himalayas,
+  customfeeds,
   hackernews,
   usajobs,
 ];

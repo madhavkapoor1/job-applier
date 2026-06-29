@@ -21,7 +21,7 @@ INCLUDE=(
   .env.example job-applier.config.example.json
   .gitignore .gitattributes
   start-mac.command start-windows.bat
-  README.md GUIDE.md START-HERE-MAC.txt ASK-CLAUDE.md CLAUDE.md AGENTS.md LICENSE
+  README.md GUIDE.md START-HERE-MAC.txt ASK-CLAUDE.md CLAUDE.md AGENTS.md LICENSE CONTRIBUTING.md
 )
 
 for item in "${INCLUDE[@]}"; do

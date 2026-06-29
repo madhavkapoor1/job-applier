@@ -30,12 +30,13 @@ export interface DashboardState {
   profile: Profile;
   search: SearchConfig;
   sources: { name: string; enabled: boolean }[];
-  /** ATS company handles currently configured, so the form can round-trip them. */
+  /** ATS company handles + custom feed URLs currently configured, so the form can round-trip them. */
   sourceCompanies: {
     greenhouse: string[];
     lever: string[];
     ashby: string[];
     workable: string[];
+    customFeeds: string[];
   };
   needsSetup: boolean;
   /** True once the user has uploaded their own CV (PDF). */
@@ -103,6 +104,7 @@ export function getDashboardState(): DashboardState {
       lever: config.sources.lever?.companies ?? [],
       ashby: config.sources.ashby?.companies ?? [],
       workable: config.sources.workable?.companies ?? [],
+      customFeeds: config.sources.customfeeds?.urls ?? [],
     },
     needsSetup: isPlaceholderProfile(config),
     hasResume: !!uploadedResumePath(),

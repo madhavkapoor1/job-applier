@@ -73,6 +73,7 @@
     "arbeitnow": { "enabled": true },
     "jobicy": { "enabled": true },
     "himalayas": { "enabled": true },
+    "customfeeds": { "urls": [] },
     "hackernews": { "enabled": false, "monthsBack": 1 },
     "usajobs": { "enabled": false }
   }

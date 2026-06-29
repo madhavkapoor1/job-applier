@@ -58,6 +58,7 @@ export interface ProfilePayload {
     arbeitnow: boolean;
     jobicy: boolean;
     himalayas: boolean;
+    customFeeds: string[];
     hackernews: boolean;
     usajobs: boolean;
   };
@@ -298,6 +299,7 @@ function mergeConfig(current: AppConfig, p: ProfilePayload): AppConfig {
       arbeitnow: { enabled: !!p.sources.arbeitnow },
       jobicy: { enabled: !!p.sources.jobicy },
       himalayas: { enabled: !!p.sources.himalayas },
+      customfeeds: { urls: cleanList(p.sources.customFeeds) },
       hackernews: {
         enabled: !!p.sources.hackernews,
         monthsBack: current.sources.hackernews?.monthsBack ?? 1,

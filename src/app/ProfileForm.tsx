@@ -102,6 +102,7 @@ export default function ProfileForm({
   const [lv, setLv] = useState(state.sourceCompanies.lever.join(", "));
   const [ah, setAh] = useState(state.sourceCompanies.ashby.join(", "));
   const [wk, setWk] = useState(state.sourceCompanies.workable.join(", "));
+  const [feeds, setFeeds] = useState(state.sourceCompanies.customFeeds.join("\n"));
   const [toggles, setToggles] = useState<Record<ToggleKey | "usajobs", boolean>>({
     reed: enabled("reed"),
     themuse: enabled("themuse"),
@@ -188,6 +189,7 @@ export default function ProfileForm({
         arbeitnow: toggles.arbeitnow,
         jobicy: toggles.jobicy,
         himalayas: toggles.himalayas,
+        customFeeds: splitLines(feeds),
         hackernews: toggles.hackernews,
         usajobs: toggles.usajobs,
       },
@@ -426,6 +428,24 @@ export default function ProfileForm({
               </label>
             ))}
           </div>
+        </div>
+
+        <div>
+          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            Add any job board by feed URL (RSS/Atom)
+          </p>
+          <p className="mb-2 text-xs text-zinc-500">
+            Paste one feed URL per line — any board that publishes an RSS/Atom feed works, no code.
+            E.g. <code>https://weworkremotely.com/remote-jobs.rss</code>. Jobs are filtered by your
+            keywords like every other source.
+          </p>
+          <textarea
+            className={inputClass}
+            rows={3}
+            value={feeds}
+            onChange={(e) => setFeeds(e.target.value)}
+            placeholder={"https://weworkremotely.com/remote-jobs.rss\nhttps://example.com/careers/feed"}
+          />
         </div>
 
         <details className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">

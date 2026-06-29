@@ -73,6 +73,7 @@ self-disables (logged, never fatal) when it lacks a key or config.
 | `himalayas` | 80k+ live remote jobs, broad coverage |
 | `themuse` | US & remote roles (category-configurable) |
 | `hackernews` | Monthly "Who is hiring?" threads (off by default; tech-leaning) |
+| `customfeeds` | **Any** board's RSS/Atom feed — paste a URL, no code (see below) |
 | `greenhouse` / `lever` / `ashby` / `workable` | Per-company ATS boards (optional — add company slugs) |
 
 **Keyed — add a free key in `.env` for on-site & country-specific coverage:**
@@ -147,11 +148,23 @@ templates to change every future application.
 - **`src/app/`** — a thin Next.js (App Router) UI over the engine; server actions in `actions.ts`.
 - **`scripts/`** — CLI entry points run via `tsx`.
 
-### Adding a source
+### Adding more job boards
 
-Implement the `JobSource` interface (`name`, `isEnabled`, `fetch` → `RawJob[]`) in a new file under
-`src/jobs/sources/`, then add it to `ALL_SOURCES` in `sources/index.ts`. Normalization, dedupe,
-scoring, and persistence are handled for you.
+Three ways, easiest first:
+
+1. **Any board with an RSS/Atom feed** — paste its feed URL into *"Add any job board by feed URL"*
+   in the Profile tab (or `sources.customfeeds.urls`). No code. Covers most niche / country /
+   company-career boards.
+2. **A company on Greenhouse / Lever / Ashby / Workable** — add its handle in the Profile tab. No
+   code.
+3. **A board with a bespoke JSON API** — implement the `JobSource` interface (`name`, `isEnabled`,
+   `fetch` → `RawJob[]`) in a new file under `src/jobs/sources/` and register it in
+   `sources/index.ts`. Normalization, dedupe, scoring, and persistence are handled for you. See
+   **[CONTRIBUTING.md](CONTRIBUTING.md)** for a step-by-step example.
+
+> **Walled gardens:** LinkedIn and Indeed have no usable public job API (Indeed retired theirs;
+> LinkedIn never offered one, and scraping both is against their terms). Many of their listings are
+> still reachable indirectly through **Google Jobs** (the `serpapi` source).
 
 ## Data & privacy
 
