@@ -63,7 +63,7 @@
     "reed": { "enabled": true },
     "themuse": { "enabled": true, "category": "Legal Services" },
     "adzuna": { "enabled": true, "country": "gb" },
-    "serpapi": { "enabled": false, "location": "United Kingdom" },
+    "serpapi": { "enabled": true, "location": "United Kingdom" },
     "greenhouse": { "companies": ["monzo", "gocardless", "trustpilot", "wayve", "tide"] },
     "lever": { "companies": [] },
     "ashby": { "companies": [] },

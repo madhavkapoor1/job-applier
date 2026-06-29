@@ -3,6 +3,7 @@ import { loadConfig, loadEnv, isPlaceholderProfile, uploadedResumePath, env } fr
 import { allJobs, allApplications, getJob, getLastDiscovery } from "./store.ts";
 import { readMaterial } from "./materials.ts";
 import { ALL_SOURCES } from "./sources/index.ts";
+import { isDirectSource } from "./source-meta.ts";
 import type { ApplicationStatus, Job, Profile, SearchConfig } from "./types.ts";
 
 export interface JobCard {
@@ -13,6 +14,8 @@ export interface JobCard {
   remote: boolean;
   url: string;
   source: string;
+  /** True when the url is the company's own apply page (not an aggregator). */
+  direct: boolean;
   score: number;
   matchedKeywords: string[];
   postedAt?: string;
@@ -59,6 +62,7 @@ function toCard(job: Job): JobCard {
     remote: job.remote,
     url: job.url,
     source: job.source,
+    direct: isDirectSource(job.source),
     score: job.score,
     matchedKeywords: job.matchedKeywords,
     postedAt: job.postedAt,

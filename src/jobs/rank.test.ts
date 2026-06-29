@@ -89,6 +89,16 @@ test("scoreJob: region match adds a ranking bonus without being required", () =>
   assert.ok(inRegion.score > outRegion.score, "in-region job should rank above out-of-region");
 });
 
+test("scoreJob: direct-apply (company/ATS) sources outrank aggregators", () => {
+  const cfg = config({ keywords: ["software engineer"] });
+  const direct = scoreJob(job({ source: "greenhouse" }), cfg);
+  const aggregator = scoreJob(job({ source: "jobicy" }), cfg);
+  assert.ok(
+    direct.score > aggregator.score,
+    `direct ${direct.score} should beat aggregator ${aggregator.score}`,
+  );
+});
+
 test("passesFilters: requires a usable url", () => {
   assert.equal(passesFilters(job({ url: "" }), config()), false);
   assert.equal(passesFilters(job({ url: "https://x.com" }), config()), true);

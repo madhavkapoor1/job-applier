@@ -1,4 +1,5 @@
 import { locationInRegions } from "./regions.ts";
+import { isDirectSource } from "./source-meta.ts";
 import type { AppConfig, Job } from "./types.ts";
 
 /**
@@ -65,6 +66,10 @@ export function scoreJob(job: Job, config: AppConfig): Job {
       const ageDays = (Date.now() - Date.parse(job.postedAt)) / 86_400_000;
       if (Number.isFinite(ageDays) && ageDays <= 14) points += 6;
     }
+
+    // Direct-apply preference: jobs that land on the company's own application
+    // page (ATS / careers site / Google Jobs) rank above aggregator listings.
+    if (isDirectSource(job.source)) points += 10;
   }
 
   job.score = Math.min(100, Math.round(points));

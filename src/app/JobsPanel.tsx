@@ -30,8 +30,11 @@ export default function JobsPanel({
   const [pending, startTransition] = useTransition();
   const [summary, setSummary] = useState<DiscoverySummary | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [directOnly, setDirectOnly] = useState(false);
 
   const enabledSources = state.sources.filter((s) => s.enabled).map((s) => s.name);
+  const directCount = state.jobs.filter((j) => j.direct).length;
+  const visibleJobs = directOnly ? state.jobs.filter((j) => j.direct) : state.jobs;
 
   function findJobs() {
     startTransition(async () => {
@@ -64,9 +67,22 @@ export default function JobsPanel({
           {enabledSources.join(", ") || "no sources enabled"}
         </span>
       </div>
-      <p className="text-xs text-zinc-400">
-        The app checks for new jobs automatically each time you open it.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-zinc-400">
+          The app checks for new jobs automatically each time you open it.
+        </p>
+        {state.jobs.length > 0 && (
+          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <input
+              type="checkbox"
+              checked={directOnly}
+              onChange={(e) => setDirectOnly(e.target.checked)}
+              className="h-4 w-4 rounded"
+            />
+            Direct apply only <span className="text-zinc-400">({directCount})</span>
+          </label>
+        )}
+      </div>
 
       {summary && (
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300">
@@ -81,9 +97,14 @@ export default function JobsPanel({
             ? "No new jobs right now — everything found is already in your review list. Add a Reed API key (see README) for far more UK results."
             : "Searching for jobs…"}
         </p>
+      ) : visibleJobs.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700">
+          No “direct apply” jobs in this batch. Untick the filter to see all {state.jobs.length},
+          or add a Google Jobs (SerpAPI) key for more company-direct listings.
+        </p>
       ) : (
         <ul className="space-y-3">
-          {state.jobs.map((job) => (
+          {visibleJobs.map((job) => (
             <li
               key={job.id}
               className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
@@ -95,6 +116,11 @@ export default function JobsPanel({
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
                     {job.company} · {job.location}
                     {job.remote && <span className="ml-2 text-emerald-600">remote</span>}
+                    {job.direct && (
+                      <span className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                        ✓ Direct apply
+                      </span>
+                    )}
                     <span className="ml-2 uppercase tracking-wide text-[11px] text-zinc-400">
                       {job.source}
                     </span>

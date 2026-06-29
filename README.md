@@ -138,12 +138,26 @@ review, answer any custom questions, pass the CAPTCHA, and click submit. **It ne
 Because it drives a browser on your computer, this feature only works when running locally — not on
 a hosted deployment.
 
+## Direct apply vs. aggregators
+
+Some sources land you on the **company's own application page** (where you actually apply, and
+where *assisted apply* can pre-fill the form); others are aggregators whose link is their own
+listing page. Direct sources are **Greenhouse / Lever / Ashby / Workable** (company ATS),
+**Google Jobs** (`serpapi` — apply links usually point at the company/ATS), and **USAJobs**. These
+get a ranking boost so they float above aggregator listings, are tagged **✓ Direct apply** in the
+Find Jobs list, and can be isolated with the **"Direct apply only"** filter.
+
+To actually get direct-apply jobs you need at least one direct source active: add a free
+**Google Jobs (SerpAPI)** key (broadest, any country), and/or add company handles for the ATS
+boards. Without them, results are aggregator listings only.
+
 ## How ranking works
 
 `src/jobs/rank.ts` scores each job 0–100 by keyword/skill hits (title weighted heavily over body),
-plus remote/region alignment and freshness. A transparent heuristic — no AI key needed. Matching is
-whole-word, so short skills like "C", "Go", "AI" don't match inside unrelated words. Tune the
-weights there, or the thresholds (`minScore`, `excludeTitleKeywords`, `remoteOnly`) in the config.
+plus remote/region alignment, freshness, and a **direct-apply** boost (see above). A transparent
+heuristic — no AI key needed. Matching is whole-word, so short skills like "C", "Go", "AI" don't
+match inside unrelated words. Tune the weights there, or the thresholds (`minScore`,
+`excludeTitleKeywords`, `remoteOnly`) in the config.
 
 ## Materials
 
