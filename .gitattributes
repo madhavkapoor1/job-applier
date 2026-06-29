@@ -1,0 +1,4 @@
+# Shell launchers must keep Unix (LF) line endings or macOS refuses to run them
+# ("bad interpreter: /bin/bash^M").
+*.command text eol=lf
+*.sh text eol=lf

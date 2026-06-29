@@ -1,0 +1,79 @@
+{
+  "profile": {
+    "name": "Your Name",
+    "email": "you@example.com",
+    "phone": "+44 7700 900000",
+    "location": "London, UK",
+    "links": {
+      "linkedin": "https://linkedin.com/in/you",
+      "portfolio": ""
+    },
+    "summary": "Paralegal with strong legal research, drafting, and case-management skills, looking to broaden into ESG and legal technology / AI governance. Organised, detail-oriented, and comfortable supporting fast-moving legal teams.",
+    "skills": [
+      "Legal research",
+      "Legal drafting",
+      "Contract review",
+      "Case management",
+      "Due diligence",
+      "Compliance",
+      "Bundling",
+      "Disclosure",
+      "ESG",
+      "Document review",
+      "Client liaison"
+    ],
+    "experience": [
+      {
+        "title": "Paralegal",
+        "company": "Example Law Firm",
+        "start": "2023",
+        "end": "Present",
+        "bullets": [
+          "Drafted legal correspondence and prepared court bundles for litigation matters.",
+          "Conducted legal research and due diligence to support fee-earners.",
+          "Managed case files and client communications across a busy caseload."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "LLB Law (or GDL / LPC / SQE as applicable)",
+        "school": "Your University",
+        "year": "2023"
+      }
+    ]
+  },
+  "search": {
+    "keywords": [
+      "paralegal",
+      "legal assistant",
+      "legal",
+      "compliance",
+      "ESG",
+      "legal counsel",
+      "trainee solicitor"
+    ],
+    "regions": ["uk"],
+    "locations": [],
+    "remoteOnly": false,
+    "minScore": 8,
+    "excludeTitleKeywords": ["partner", "head of legal"]
+  },
+  "sources": {
+    "reed": { "enabled": true },
+    "themuse": { "enabled": true, "category": "Legal Services" },
+    "adzuna": { "enabled": true, "country": "gb" },
+    "serpapi": { "enabled": false, "location": "United Kingdom" },
+    "greenhouse": { "companies": ["monzo", "gocardless", "trustpilot", "wayve", "tide"] },
+    "lever": { "companies": [] },
+    "ashby": { "companies": [] },
+    "workable": { "companies": [] },
+    "remotive": { "enabled": true },
+    "remoteok": { "enabled": true },
+    "arbeitnow": { "enabled": true },
+    "jobicy": { "enabled": true },
+    "himalayas": { "enabled": true },
+    "hackernews": { "enabled": false, "monthsBack": 1 },
+    "usajobs": { "enabled": false }
+  }
+}

@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# job-applier: generated data + live config (both contain personal info).
+# job-applier.config.example.json is the committed template.
+/data
+/job-applier.config.json
+
+# Bundled Node runtime downloaded by start-mac.command on first run.
+/.runtime
+
+# Shareable package built by `npm run package` — a generated artifact, not source.
+/job-applier-mac.tar.gz

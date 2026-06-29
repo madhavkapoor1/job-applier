@@ -1,0 +1,56 @@
+================================================================
+  JOB APPLIER  —  Start here (Mac)
+================================================================
+
+WHAT IT IS
+  A little app that finds UK legal jobs, scores how well they fit
+  you, and writes a tailored CV + cover letter for each one — so
+  applying takes a couple of minutes instead of twenty.
+
+
+HOW TO START IT
+  1. Double-click the file:  start-mac.command
+  2. The first time, it sets itself up (a few minutes). After that
+     it's quick.
+  3. Your web browser opens to the app automatically.
+  4. Leave the little black "Terminal" window open while you use it.
+
+  To STOP the app: just close that black window.
+
+
+FIRST TIME: IF DOUBLE-CLICKING DOESN'T WORK
+  Mac may block files it didn't download itself. Do this once:
+    • Right-click (or Control-click) start-mac.command
+    • Choose "Open"
+    • Click "Open" again on the warning.
+  From then on, a normal double-click works.
+
+  Still stuck? Open the "Terminal" app (find it with Spotlight: press
+  Cmd-Space, type Terminal), then type:  bash
+  (with a space after it), drag the start-mac.command file into the
+  Terminal window, and press Return.
+
+
+USING IT  (three tabs in the browser)
+  1. Your Profile  — fill in your details once, click Save.
+  2. Find Jobs     — it searches automatically and prepares your
+                     best matches.
+  3. Review & Apply— open each job, copy the cover letter + CV,
+                     paste into their form, submit, mark as applied.
+
+
+GET LOTS MORE JOBS  (free, 2 minutes — optional but recommended)
+  1. Go to  https://www.reed.co.uk/developers  and sign up (free).
+  2. Create an API key and copy it.
+  3. Open the file named  .env  in this folder (TextEdit is fine).
+  4. Put your key after REED_API_KEY=  so it looks like:
+       REED_API_KEY=your-key-here
+  5. Save, then stop and re-start the app.
+
+
+YOUR PRIVACY
+  Everything stays on this Mac. Your details and the jobs are
+  saved only here — nothing is uploaded anywhere.
+
+  Full details are in GUIDE.md.
+================================================================
