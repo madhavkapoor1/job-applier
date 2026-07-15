@@ -1,10 +1,10 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { DATA_DIR } from "./config.ts";
+import { dataDir } from "./config.ts";
 import { allApplications, getJob } from "./store.ts";
 import { readMaterial } from "./materials.ts";
 
-const REVIEW_PATH = resolve(DATA_DIR, "review.html");
+const reviewPath = () => resolve(dataDir(), "review.html");
 
 const esc = (s: string) =>
   (s ?? "")
@@ -95,6 +95,7 @@ export function buildReviewPage(): { path: string; count: number } {
 </script>
 </body></html>`;
 
-  writeFileSync(REVIEW_PATH, html);
-  return { path: REVIEW_PATH, count: queued.length };
+  const path = reviewPath();
+  writeFileSync(path, html);
+  return { path, count: queued.length };
 }

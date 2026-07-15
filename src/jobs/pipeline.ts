@@ -11,6 +11,8 @@ export interface DiscoverySummary {
   skipped: string[];
   /** postings per source; -1 marks a source that errored out. */
   perSource: Record<string, number>;
+  /** source name → error message, for sources that failed entirely. */
+  errors: Record<string, string>;
   fetched: number;
   unique: number;
   kept: number;
@@ -26,6 +28,7 @@ export async function runDiscovery(
   const enabled = ALL_SOURCES.filter((s) => s.isEnabled(config));
   const skipped = ALL_SOURCES.filter((s) => !s.isEnabled(config)).map((s) => s.name);
   const perSource: Record<string, number> = {};
+  const errors: Record<string, string> = {};
 
   const results = await Promise.allSettled(
     enabled.map(async (s) => {
@@ -38,6 +41,7 @@ export async function runDiscovery(
   const rawJobs = results.flatMap((r, i) => {
     if (r.status === "fulfilled") return r.value;
     perSource[enabled[i].name] = -1;
+    errors[enabled[i].name] = (r.reason as Error)?.message ?? String(r.reason);
     return [];
   });
 
@@ -51,6 +55,7 @@ export async function runDiscovery(
       enabled: enabled.map((s) => s.name),
       skipped,
       perSource,
+      errors,
       fetched: rawJobs.length,
       unique: jobs.length,
       kept: kept.length,
@@ -62,9 +67,9 @@ export async function runDiscovery(
 }
 
 /** Generate tailored materials for a job and add it to the review queue. */
-export function queueJob(job: Job, config: AppConfig): Application {
+export async function queueJob(job: Job, config: AppConfig): Promise<Application> {
   const now = new Date().toISOString();
-  const mats = generateMaterials(job, config.profile);
+  const mats = await generateMaterials(job, config.profile);
   const app: Application = {
     jobId: job.id,
     status: "queued",
@@ -86,30 +91,34 @@ export interface QueueResult {
  * Queue many jobs with a single db write. Failures are recorded as
  * status:"error" applications (so they aren't retried forever) and reported.
  * This is the one queueing policy shared by the CLI and the web UI.
+ * Materials generate concurrently (AI letters are network-bound).
  */
-export function queueJobs(jobs: Job[], config: AppConfig): QueueResult {
+export async function queueJobs(jobs: Job[], config: AppConfig): Promise<QueueResult> {
   const now = new Date().toISOString();
-  const batch: Application[] = [];
   const result: QueueResult = { queued: [], errors: [] };
-  for (const job of jobs) {
-    try {
-      const mats = generateMaterials(job, config.profile);
-      const app: Application = {
-        jobId: job.id,
-        status: "queued",
-        createdAt: now,
-        updatedAt: now,
-        resumePath: mats.resumePath,
-        coverLetterPath: mats.coverLetterPath,
-      };
-      batch.push(app);
-      result.queued.push(app);
-    } catch (err) {
-      const message = (err as Error).message;
-      batch.push({ jobId: job.id, status: "error", createdAt: now, updatedAt: now, note: message });
-      result.errors.push({ jobId: job.id, title: job.title, error: message });
-    }
-  }
+
+  const batch: Application[] = await Promise.all(
+    jobs.map(async (job): Promise<Application> => {
+      try {
+        const mats = await generateMaterials(job, config.profile);
+        const app: Application = {
+          jobId: job.id,
+          status: "queued",
+          createdAt: now,
+          updatedAt: now,
+          resumePath: mats.resumePath,
+          coverLetterPath: mats.coverLetterPath,
+        };
+        result.queued.push(app);
+        return app;
+      } catch (err) {
+        const message = (err as Error).message;
+        result.errors.push({ jobId: job.id, title: job.title, error: message });
+        return { jobId: job.id, status: "error", createdAt: now, updatedAt: now, note: message };
+      }
+    }),
+  );
+
   saveApplications(batch);
   return result;
 }

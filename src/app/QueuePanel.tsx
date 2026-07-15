@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { DashboardState, QueueCard } from "../jobs/dashboard.ts";
-import { markAction, assistApplyAction } from "./actions.ts";
+import { markAction, assistApplyAction, assistApplyAllAction } from "./actions.ts";
 import { ScoreBadge, CopyButton, btnPrimary, btnGhost } from "./components.tsx";
 import type { ApplicationStatus } from "../jobs/types.ts";
 
@@ -22,13 +22,20 @@ export default function QueuePanel({
 }) {
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function mark(id: string, status: ApplicationStatus) {
     setBusyId(id);
+    setError(null);
     startTransition(async () => {
-      const next = await markAction(id, status);
-      onState(next);
-      setBusyId(null);
+      try {
+        const next = await markAction(id, status);
+        onState(next);
+      } catch (err) {
+        setError(`Couldn't save that change: ${(err as Error).message}. Please try again.`);
+      } finally {
+        setBusyId(null);
+      }
     });
   }
 
@@ -43,13 +50,25 @@ export default function QueuePanel({
 
   const ready = state.queue.filter((q) => q.status === "queued");
   const done = state.queue.filter((q) => q.status !== "queued");
+  const assistableReady = ready.filter((q) => q.assistable);
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          {error}
+        </div>
+      )}
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        These applications were prepared automatically for your best matches. For each one: open the
-        posting, copy your cover letter and resume into their form, submit, then mark it applied.
+        These applications were prepared automatically for your best matches.
+        {state.aiEnabled && " Cover letters are AI-written for each specific job. ✨"}
+        {" "}For each one: open the posting, copy your cover letter and resume into their form,
+        submit, then mark it applied.
       </p>
+
+      {assistableReady.length > 0 && (
+        <BatchApplyBar count={assistableReady.length} onError={setError} />
+      )}
 
       <ul className="space-y-4">
         {ready.map((item) => (
@@ -97,6 +116,70 @@ export default function QueuePanel({
   );
 }
 
+/**
+ * "Open and pre-fill several ready applications at once" — the closest thing to
+ * mass-apply that still keeps quality: each form opens in its own tab, pre-filled,
+ * and the user reviews + submits. We never auto-submit.
+ */
+function BatchApplyBar({
+  count,
+  onError,
+}: {
+  count: number;
+  onError: (e: string | null) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setResult(null);
+    onError(null);
+    const res = await assistApplyAllAction();
+    setBusy(false);
+    if (!res.ok) {
+      onError(`Couldn't open the applications: ${res.error}`);
+      return;
+    }
+    if (res.opened === 0) {
+      setResult(
+        "None of the ready applications use a form we can pre-fill yet — open them individually with “Open & Apply”.",
+      );
+      return;
+    }
+    const more = res.remaining > 0 ? ` ${res.remaining} more are waiting — click again when you've finished these.` : "";
+    const skip = res.skipped > 0 ? ` (${res.skipped} use forms we can't pre-fill — do those with “Open & Apply”.)` : "";
+    setResult(
+      `Opened ${res.opened} application${res.opened === 1 ? "" : "s"} in a new browser window, each pre-filled. ` +
+        `Review each one, finish any extra questions, and click Submit.${more}${skip}`,
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+            Apply to several at once
+          </p>
+          <p className="text-xs text-indigo-700 dark:text-indigo-300">
+            Opens your ready applications in one window, each form pre-filled — you just review and
+            submit. {count} ready to pre-fill.
+          </p>
+        </div>
+        <button type="button" className={btnPrimary} onClick={run} disabled={busy}>
+          {busy ? "Opening…" : `✨ Prepare & open ${count > 8 ? "8" : count}`}
+        </button>
+      </div>
+      {result && (
+        <p className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-xs text-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-100">
+          {result}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function QueueItemCard({
   item,
   busy,
@@ -110,7 +193,7 @@ function QueueItemCard({
   const [assisting, setAssisting] = useState(false);
   const [assistMsg, setAssistMsg] = useState<string | null>(null);
   const text = show === "cover" ? item.coverLetter : item.resume;
-  const canAssist = item.source === "greenhouse";
+  const canAssist = item.assistable;
 
   async function assist() {
     setAssisting(true);

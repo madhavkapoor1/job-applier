@@ -100,6 +100,8 @@ export interface SearchConfig {
   remoteOnly: boolean;
   /** Drop jobs scoring below this (0..100). */
   minScore: number;
+  /** Only surface jobs posted within this many days (default 14; 0 = no limit). */
+  maxAgeDays?: number;
   /** Negative keywords: if any appears in the title, drop the job. */
   excludeTitleKeywords?: string[];
 }

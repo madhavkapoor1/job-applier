@@ -6,8 +6,10 @@
  */
 import { loadConfig, loadEnv } from "../src/jobs/config.ts";
 import { runDiscovery } from "../src/jobs/pipeline.ts";
+import { applyCliProfileArg } from "../src/jobs/profiles.ts";
 
 async function main() {
+  applyCliProfileArg(); // --profile <name> targets another person's data
   loadEnv();
   const config = loadConfig();
 
@@ -18,7 +20,11 @@ async function main() {
     console.log(`Sources skipped (disabled/no key): ${summary.skipped.join(", ")}`);
   console.log("");
   for (const [name, count] of Object.entries(summary.perSource)) {
-    console.log(count < 0 ? `  ${name}: FAILED` : `  ${name}: ${count} postings`);
+    console.log(
+      count < 0
+        ? `  ${name}: FAILED — ${summary.errors[name] ?? "unknown error"}`
+        : `  ${name}: ${count} postings`,
+    );
   }
 
   console.log("");

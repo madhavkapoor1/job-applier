@@ -27,3 +27,31 @@ export const DIRECT_SOURCES: ReadonlySet<string> = new Set([
 export function isDirectSource(source: string): boolean {
   return DIRECT_SOURCES.has(source);
 }
+
+/** Applicant-tracking systems whose forms assisted-apply can pre-fill. */
+export const ATS_HOSTS = ["greenhouse.io", "lever.co", "ashbyhq.com", "workable.com"] as const;
+export type AtsKind = "greenhouse" | "lever" | "ashby" | "workable";
+
+/** Identify which ATS a url belongs to (by host), or undefined if none. */
+export function atsFromUrl(url: string): AtsKind | undefined {
+  let host = "";
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+  if (host.includes("greenhouse.io")) return "greenhouse";
+  if (host.includes("lever.co")) return "lever";
+  if (host.includes("ashbyhq.com")) return "ashby";
+  if (host.includes("workable.com")) return "workable";
+  return undefined;
+}
+
+/**
+ * True when assisted-apply can meaningfully pre-fill this job's form: the url
+ * points at a known ATS, or it came from an ATS source. Google Jobs links often
+ * resolve to an ATS too, but we only promise assist when the url is recognisable.
+ */
+export function isAssistable(url: string, source: string): boolean {
+  return !!atsFromUrl(url) || (["greenhouse", "lever", "ashby", "workable"] as string[]).includes(source);
+}

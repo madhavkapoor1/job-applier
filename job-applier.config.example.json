@@ -56,7 +56,8 @@
     "regions": ["uk"],
     "locations": [],
     "remoteOnly": false,
-    "minScore": 8,
+    "minScore": 12,
+    "maxAgeDays": 14,
     "excludeTitleKeywords": ["partner", "head of legal"]
   },
   "sources": {

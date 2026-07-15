@@ -7,7 +7,10 @@
  *   npm run list -- --status applied
  */
 import { allApplications, allJobs, getJob } from "../src/jobs/store.ts";
+import { applyCliProfileArg } from "../src/jobs/profiles.ts";
 import type { ApplicationStatus } from "../src/jobs/types.ts";
+
+applyCliProfileArg(); // --profile <name> targets another person's data
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);

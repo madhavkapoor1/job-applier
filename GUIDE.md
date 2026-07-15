@@ -81,13 +81,12 @@ UK legal roles.
 
 1. Go to **https://www.reed.co.uk/developers** and register (free).
 2. Confirm your email, then click **"Create a new API key"** — copy the long string.
-3. In the project folder, open the file named **`.env`** in a text editor.
-4. Put the key after `REED_API_KEY=` so the line reads exactly:
-   `REED_API_KEY=paste-the-long-string-here` (no spaces, no quotes).
-5. Save the file and restart the app (Part 5).
+3. In the app, open **Your Profile → API keys**, paste the key into the **Reed.co.uk** box, and
+   click **Save keys**. That's it — no files to edit, no restart; the next search uses it.
 
-(Optional: **Adzuna** at https://developer.adzuna.com gives even more — same idea, fill in
-`ADZUNA_APP_ID` and `ADZUNA_APP_KEY` in `.env`.)
+(Optional extras in the same section: **Adzuna** at https://developer.adzuna.com gives even more
+listings, and a **Claude (Anthropic)** key makes every cover letter AI-written for the specific
+job — about a penny per letter.)
 
 ---
 

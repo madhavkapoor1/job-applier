@@ -28,12 +28,12 @@ npm run build          # production build (also runs full tsc typecheck)
 npm start              # serve the production build
 npm run lint           # eslint
 
-# CLI pipeline (run in order)
+# CLI pipeline (run in order); all scripts accept --profile <name> to target another profile
 npm run discover                       # fetch + rank + store jobs
 npm run apply -- --limit 20 --min 12   # generate materials, queue top matches (--all for everything)
 npm run list -- --jobs                 # all discovered jobs; or --status queued|applied|skipped|all
 npm run mark -- <jobId> applied "note" # set an application's status
-npm run review                         # rebuild data/review.html from the queue
+npm run review                         # rebuild the profile's review.html from the queue
 
 # Tests
 npm test                # unit suite — Node's built-in runner via tsx, no extra deps, offline
@@ -68,16 +68,37 @@ build` still runs a full tsc typecheck for web changes.
   and cross-source duplicates collapse), strips HTML, decodes entities, infers `remote`.
   `dedupe()` keeps the richest copy.
 - `rank.ts` — `scoreJob()` is a transparent keyword heuristic (no AI): title hits weighted over
-  body, plus remote/location/freshness. `passesFilters()` applies remote-only / excluded-title /
-  min-score gates.
-- `store.ts` — persistence is a single JSON file at `data/db.json` (`{ jobs, applications }`),
-  keyed by job id. No database.
-- `materials.ts` + `templates/*.md` — resume/cover letter via `{{token}}` substitution only
-  (no template engine, no AI). Rendered per job into `data/applications/<jobId>/`.
-- `config.ts` — loads/validates/saves `job-applier.config.json` (profile + search + sources).
-  **Paths anchor to `process.cwd()`, not `import.meta.dirname`** — this is deliberate so the same
-  files resolve correctly both under `tsx` (CLI) and inside Next's server bundle. `saveConfig()`
-  is what the web form writes through, keeping CLI and web in sync.
+  body, plus remote/location/freshness. `passesFilters()` applies freshness (`search.maxAgeDays`,
+  default 14; 0 = no limit — `withinMaxAge()` is also applied to the dashboard job list) /
+  remote-only / excluded-title / min-score gates.
+- `store.ts` — persistence is a single JSON file per profile (`<profile>/db.json`,
+  `{ jobs, applications }`), keyed by job id. No database.
+- `presets.ts` — field presets (Legal, Healthcare, Finance, …) mapping a profession to starter
+  keywords; the Profile form applies them. Pure data, client-importable.
+- `apply-assist.ts` — assisted apply. `atsFromUrl()`/per-ATS selector maps in `source-meta.ts`
+  cover Greenhouse/Lever/Ashby/Workable (best-effort, generic fallbacks, never submits).
+  `assistedApply` (one job) and `assistedApplyBatch` (many jobs, one shared visible window) — both
+  intentionally leave the browser open for the user to finish. Only jobs whose URL is a recognised
+  ATS are assistable (`isAssistable`); Google-Jobs/aggregator links open manually.
+- `materials.ts` + `templates/*.md` — resume via `{{token}}` substitution; the cover letter is
+  AI-written per job (`ai.ts`, Anthropic API, `claude-sonnet-5`) when `ANTHROPIC_API_KEY` is set,
+  falling back to the template offline. Rendered per job into `<profile>/applications/<jobId>/`.
+  `generateMaterials`/`queueJob`/`queueJobs` are **async** for this reason.
+- `profiles.ts` — **multi-user support.** Each person's data lives in `data/profiles/<slug>/`
+  (`config.json`, `db.json`, `applications/`, `resume.pdf`). The active profile is a pointer file
+  (`data/active-profile.json`) shared by web and CLI; `JOB_APPLIER_PROFILE` / `--profile` override
+  per run. The legacy single-user layout (config at repo root, `data/db.json`) is auto-migrated
+  into `profiles/default/` on first access.
+- `config.ts` — loads/validates/saves the active profile's `config.json` (profile + search +
+  sources). **Paths anchor to `process.cwd()`, not `import.meta.dirname`** — this is deliberate so
+  the same files resolve correctly both under `tsx` (CLI) and inside Next's server bundle. The
+  cache is keyed by path + mtime, so profile switches and cross-process edits are picked up.
+  `saveConfig()` is what the web form writes through, keeping CLI and web in sync. `dataDir()` is
+  the active profile's directory — always call it fresh; never cache its result in a module const.
+- `fsatomic.ts` — `writeFileAtomic()` (temp + rename). **All JSON persistence goes through it**;
+  a corrupted `db.json` is backed up to `db.json.corrupt-<ts>`, never silently reset.
+- `envfile.ts` — reads/writes the five managed API keys in `.env` for the web UI (`saveKeysAction`);
+  key *presence* is exposed to the client, values never are. Keys are install-wide, not per-profile.
 
 **Web app (`src/app/`)** — thin layer over the engine:
 
@@ -97,11 +118,11 @@ build` still runs a full tsc typecheck for web changes.
   (`allowImportingTsExtensions` in tsconfig) so scripts also work under plain Node type-stripping.
   Keep using `.ts` in import specifiers.
 - **Env keys** load via `process.loadEnvFile()` from `.env` (see `.env.example`); never hard-code.
-- **Personal data:** `data/` AND `job-applier.config.json` (the live config) are gitignored —
-  both hold the user's personal details. `job-applier.config.example.json` is the committed
-  template; `loadConfig()` falls back to it until the user saves a profile, and
-  `isPlaceholderProfile()` (no saved config, or template strings) routes first-time web users to
-  the Profile tab and blocks auto-prepare.
+- **Personal data:** everything under `data/` is gitignored — profiles, configs, keys' effects.
+  `job-applier.config.example.json` is the committed template; `loadConfig()` falls back to it
+  until the active profile saves a config, and `isPlaceholderProfile()` (no saved config, or
+  template strings) routes first-time web users to the Profile tab and blocks auto-prepare.
+  `.env` is also gitignored; the web UI writes keys into it via `envfile.ts`.
 - **Store concurrency:** `store.ts` invalidates its in-process cache via db.json mtime so the CLI
   and web server can run simultaneously without clobbering each other — don't reintroduce a plain
   module-level cache. Use `saveApplications()`/`queueJobs()` for batches (one write), not loops of

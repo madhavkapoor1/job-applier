@@ -1,9 +1,12 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { TEMPLATE_DIR, DATA_DIR } from "./config.ts";
+import { TEMPLATE_DIR, dataDir } from "./config.ts";
+import { aiCoverLetter } from "./ai.ts";
 import type { Job, Profile } from "./types.ts";
 
-const APPLICATIONS_DIR = resolve(DATA_DIR, "applications");
+function applicationsDir(): string {
+  return resolve(dataDir(), "applications");
+}
 
 /**
  * Build the flat token map fed to templates. Everything is a precomputed string,
@@ -76,7 +79,7 @@ function loadTemplate(name: string): string {
 /** Read a generated material by its data-dir-relative path ("" if absent). */
 export function readMaterial(rel?: string): string {
   if (!rel) return "";
-  const p = resolve(DATA_DIR, rel);
+  const p = resolve(dataDir(), rel);
   return existsSync(p) ? readFileSync(p, "utf8") : "";
 }
 
@@ -85,18 +88,22 @@ export interface GeneratedMaterials {
   coverLetterPath: string;
 }
 
-/** Render resume + cover letter for a job and write them under data/applications/<id>/. */
-export function generateMaterials(job: Job, profile: Profile): GeneratedMaterials {
+/**
+ * Render resume + cover letter for a job and write them under
+ * <profile>/applications/<id>/. When an Anthropic key is configured, the cover
+ * letter is AI-written for this specific job; the {{token}} template is the
+ * offline fallback (and always used for the resume).
+ */
+export async function generateMaterials(job: Job, profile: Profile): Promise<GeneratedMaterials> {
   const ctx = buildContext(job, profile);
   const resume = render(loadTemplate("resume.md"), ctx);
-  const cover = render(loadTemplate("cover-letter.md"), ctx);
+  const cover =
+    (await aiCoverLetter(job, profile)) ?? render(loadTemplate("cover-letter.md"), ctx);
 
-  const dir = resolve(APPLICATIONS_DIR, job.id);
+  const dir = resolve(applicationsDir(), job.id);
   mkdirSync(dir, { recursive: true });
-  const resumePath = resolve(dir, "resume.md");
-  const coverPath = resolve(dir, "cover-letter.md");
-  writeFileSync(resumePath, resume);
-  writeFileSync(coverPath, cover);
+  writeFileSync(resolve(dir, "resume.md"), resume);
+  writeFileSync(resolve(dir, "cover-letter.md"), cover);
 
   return {
     resumePath: `applications/${job.id}/resume.md`,

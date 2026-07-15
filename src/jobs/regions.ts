@@ -77,6 +77,49 @@ export const REGIONS: RegionDef[] = [
     ],
   },
   {
+    id: "australia",
+    label: "Australia",
+    adzunaCountry: "au",
+    googleLocation: "Australia",
+    matchTerms: [
+      "australia", "australian", "sydney", "melbourne", "brisbane", "perth",
+      "adelaide", "canberra", "nsw", "victoria", "queensland",
+    ],
+  },
+  {
+    id: "germany",
+    label: "Germany",
+    adzunaCountry: "de",
+    googleLocation: "Germany",
+    matchTerms: [
+      "germany", "german", "deutschland", "berlin", "munich", "münchen",
+      "hamburg", "frankfurt", "cologne", "köln", "stuttgart",
+    ],
+  },
+  {
+    id: "ireland",
+    label: "Ireland",
+    // Adzuna has no Ireland endpoint — Google Jobs covers it.
+    googleLocation: "Ireland",
+    matchTerms: ["ireland", "irish", "dublin", "cork", "galway", "limerick"],
+  },
+  {
+    id: "singapore",
+    label: "Singapore",
+    adzunaCountry: "sg",
+    googleLocation: "Singapore",
+    matchTerms: ["singapore", "singaporean"],
+  },
+  {
+    id: "newzealand",
+    label: "New Zealand",
+    adzunaCountry: "nz",
+    googleLocation: "New Zealand",
+    matchTerms: [
+      "new zealand", "auckland", "wellington", "christchurch", "aotearoa",
+    ],
+  },
+  {
     id: "global",
     label: "Global / Remote",
     // No location filter — let worldwide + remote postings through.

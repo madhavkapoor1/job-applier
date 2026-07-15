@@ -3,7 +3,14 @@
 import { useState, useTransition } from "react";
 import type { DashboardState } from "../jobs/dashboard.ts";
 import { REGIONS } from "../jobs/regions.ts";
-import { saveProfileAction, uploadResumeAction, removeResumeAction, type ProfilePayload } from "./actions.ts";
+import { FIELD_PRESETS, type FieldPreset } from "../jobs/presets.ts";
+import {
+  saveProfileAction,
+  saveKeysAction,
+  uploadResumeAction,
+  removeResumeAction,
+  type ProfilePayload,
+} from "./actions.ts";
 import { Field, inputClass, btnPrimary, btnGhost } from "./components.tsx";
 
 const splitCsv = (s: string) =>
@@ -62,7 +69,10 @@ export default function ProfileForm({
   const p = state.profile;
   const s = state.search;
   const src = state.sources;
-  const enabled = (name: string) => src.find((x) => x.name === name)?.enabled ?? false;
+  // Round-trip what the user CONFIGURED, not the effective on/off — a keyed
+  // source with its key still missing must stay ticked across saves.
+  const enabled = (name: string) => src.find((x) => x.name === name)?.configEnabled ?? false;
+  const keyPresent = (name: string) => src.find((x) => x.name === name)?.keyPresent ?? true;
 
   const [name, setName] = useState(ph ? "" : p.name);
   const [email, setEmail] = useState(ph ? "" : p.email);
@@ -96,6 +106,7 @@ export default function ProfileForm({
     setRegions((r) => (r.includes(id) ? r.filter((x) => x !== id) : [...r, id]));
   const [remoteOnly, setRemoteOnly] = useState(s.remoteOnly);
   const [minScore, setMinScore] = useState(String(s.minScore ?? 12));
+  const [maxAgeDays, setMaxAgeDays] = useState(String(s.maxAgeDays ?? 14));
   const [exclude, setExclude] = useState((s.excludeTitleKeywords ?? []).join(", "));
 
   const [gh, setGh] = useState(state.sourceCompanies.greenhouse.join(", "));
@@ -173,6 +184,7 @@ export default function ProfileForm({
         locations: splitCsv(locations),
         remoteOnly,
         minScore: Number(minScore) || 0,
+        maxAgeDays: Number(maxAgeDays),
         excludeTitleKeywords: splitCsv(exclude),
       },
       sources: {
@@ -194,6 +206,12 @@ export default function ProfileForm({
         usajobs: toggles.usajobs,
       },
     };
+  }
+
+  function applyPreset(preset: FieldPreset) {
+    setKeywords(preset.keywords.join(", "));
+    if (preset.exclude?.length) setExclude(preset.exclude.join(", "));
+    setMsg({ kind: "ok", text: `Filled in ${preset.label} keywords — edit them, pick your countries, then Save.` });
   }
 
   function save() {
@@ -326,7 +344,29 @@ export default function ProfileForm({
 
       <section className="space-y-4 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">What jobs to look for</h2>
-        <Field label="Keywords / job titles" hint="Separate with commas.">
+
+        <div>
+          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            Quick start — pick your field
+          </p>
+          <p className="mb-2 text-xs text-zinc-500">
+            Fills in sensible keywords for you (you can edit them after). Works for any profession.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {FIELD_PRESETS.map((preset) => (
+              <button
+                type="button"
+                key={preset.id}
+                onClick={() => applyPreset(preset)}
+                className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-700 transition hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Field label="Keywords / job titles" hint="Separate with commas. A preset above fills these in; tweak freely.">
           <input className={inputClass} value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="software engineer, full stack, react" />
         </Field>
 
@@ -364,6 +404,15 @@ export default function ProfileForm({
           </Field>
           <Field label="Minimum match score" hint="Higher = stricter. 12 is a good default.">
             <input type="number" className={inputClass} value={minScore} onChange={(e) => setMinScore(e.target.value)} />
+          </Field>
+          <Field label="Posted within" hint="Hide jobs older than this.">
+            <select className={inputClass} value={maxAgeDays} onChange={(e) => setMaxAgeDays(e.target.value)}>
+              <option value="3">Last 3 days</option>
+              <option value="7">Last week</option>
+              <option value="14">Last 2 weeks</option>
+              <option value="30">Last month</option>
+              <option value="0">Any time</option>
+            </select>
           </Field>
         </div>
         <Field label="Exclude titles containing" hint="Comma-separated. Jobs whose title contains these are dropped.">
@@ -409,8 +458,8 @@ export default function ProfileForm({
           </p>
           <p className="mb-2 text-xs text-zinc-500">
             The keyless boards above are remote-leaning. For on-site & local roles in your chosen
-            countries (and the only way to reach <strong>Dubai/UAE</strong>), drop a free key into the{" "}
-            <code>.env</code> file — see the README — then tick the source.
+            countries (and the only way to reach <strong>Dubai/UAE</strong>), tick the source and
+            paste its free key in the <strong>API keys</strong> section below.
           </p>
           <div className="space-y-2">
             {KEYED_TOGGLES.map(({ key, label, hint }) => (
@@ -421,10 +470,19 @@ export default function ProfileForm({
                   onChange={(e) => setToggles((t) => ({ ...t, [key]: e.target.checked }))}
                   className="mt-1 h-4 w-4 rounded"
                 />
-                <span>
+                <span className="flex-1">
                   <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{label}</span>
                   <span className="block text-xs text-zinc-500">{hint}</span>
                 </span>
+                {keyPresent(key) ? (
+                  <span className="mt-1 shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                    ✓ key added
+                  </span>
+                ) : (
+                  <span className="mt-1 shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+                    key needed
+                  </span>
+                )}
               </label>
             ))}
           </div>
@@ -469,6 +527,8 @@ export default function ProfileForm({
         </details>
       </section>
 
+      <ApiKeysSection state={state} onState={onState} />
+
       <div className="sticky bottom-4 flex items-center gap-3">
         <button type="button" className={btnPrimary} onClick={save} disabled={pending}>
           {pending ? "Saving…" : "Save profile"}
@@ -476,6 +536,132 @@ export default function ProfileForm({
         <span className="text-sm text-zinc-500">Saved locally on your computer.</span>
       </div>
     </div>
+  );
+}
+
+const KEY_FIELDS: { env: string; label: string; hint: string; url: string }[] = [
+  {
+    env: "REED_API_KEY",
+    label: "Reed.co.uk",
+    hint: "UK's biggest job board — the single biggest coverage upgrade for UK roles.",
+    url: "https://www.reed.co.uk/developers",
+  },
+  {
+    env: "ADZUNA_APP_ID",
+    label: "Adzuna — App ID",
+    hint: "Broad aggregator for UK, Canada, India, US and more. Needs both ID and Key.",
+    url: "https://developer.adzuna.com/",
+  },
+  {
+    env: "ADZUNA_APP_KEY",
+    label: "Adzuna — App Key",
+    hint: "The second half of the Adzuna credentials.",
+    url: "https://developer.adzuna.com/",
+  },
+  {
+    env: "SERPAPI_KEY",
+    label: "Google Jobs (SerpAPI) — the universal one ⭐",
+    hint: "Pulls Google Jobs for ANY country and ANY profession — the single key that makes this work anywhere. Also the only source that reaches Dubai/UAE. Free tier.",
+    url: "https://serpapi.com/",
+  },
+  {
+    env: "ANTHROPIC_API_KEY",
+    label: "Claude (Anthropic) — AI cover letters",
+    hint: "With this key, each cover letter is written by AI for that specific job (≈ a penny per letter). Without it, letters use the standard template.",
+    url: "https://console.anthropic.com/",
+  },
+];
+
+function ApiKeysSection({
+  state,
+  onState,
+}: {
+  state: DashboardState;
+  onState: (s: DashboardState) => void;
+}) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const dirty = Object.values(values).some((v) => v.trim());
+
+  async function saveKeys() {
+    setSaving(true);
+    setMsg(null);
+    const res = await saveKeysAction(values);
+    setSaving(false);
+    if (res.ok) {
+      onState(res.state);
+      setValues({});
+      setMsg({ kind: "ok", text: "Keys saved — they take effect on the next search." });
+    } else {
+      setMsg({ kind: "err", text: res.error });
+    }
+  }
+
+  return (
+    <section className="space-y-4 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">API keys</h2>
+      <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-800 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
+        <strong>Want jobs in any country, any field?</strong> The free boards lean towards remote
+        tech roles. Add the <strong>Google Jobs (SerpAPI)</strong> key below — that one key pulls
+        real listings for whatever field and country you set in your profile, anywhere in the world.
+      </div>
+      <p className="text-xs text-zinc-500">
+        Each key is free (or has a free tier) and takes about two minutes to get — click a name to
+        open its signup page. Keys are stored only on this computer and shared by everyone using
+        this app. Saved keys are never shown; paste a new value to replace one.
+      </p>
+      <div className="space-y-3">
+        {KEY_FIELDS.map(({ env, label, hint, url }) => (
+          <div key={env} className="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-900/50">
+            <div className="flex items-center justify-between gap-2">
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+              >
+                {label} ↗
+              </a>
+              {state.keys[env as keyof typeof state.keys] && (
+                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                  ✓ saved
+                </span>
+              )}
+            </div>
+            <p className="mb-2 text-xs text-zinc-500">{hint}</p>
+            <input
+              type="password"
+              autoComplete="off"
+              className={inputClass}
+              placeholder={
+                state.keys[env as keyof typeof state.keys]
+                  ? "Saved — paste a new key to replace it"
+                  : "Paste your key here"
+              }
+              value={values[env] ?? ""}
+              onChange={(e) => setValues((v) => ({ ...v, [env]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3">
+        <button type="button" className={btnPrimary} onClick={saveKeys} disabled={saving || !dirty}>
+          {saving ? "Saving…" : "Save keys"}
+        </button>
+        {msg && (
+          <span
+            className={`text-sm ${
+              msg.kind === "ok"
+                ? "text-emerald-700 dark:text-emerald-300"
+                : "text-red-600 dark:text-red-300"
+            }`}
+          >
+            {msg.text}
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 

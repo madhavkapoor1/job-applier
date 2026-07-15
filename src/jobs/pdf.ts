@@ -1,8 +1,8 @@
 /** Render generated Markdown materials to PDF (for upload to application forms). */
 import { chromium } from "playwright";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { DATA_DIR } from "./config.ts";
+import { dataDir } from "./config.ts";
 
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -75,11 +75,15 @@ export async function ensureApplicationPdfs(
 }
 
 async function ensureOne(rel: string): Promise<string | undefined> {
-  const mdPath = resolve(DATA_DIR, rel);
+  const mdPath = resolve(dataDir(), rel);
   const pdfRel = rel.replace(/\.md$/, ".pdf");
-  const pdfPath = resolve(DATA_DIR, pdfRel);
-  if (existsSync(pdfPath)) return pdfRel;
-  if (!existsSync(mdPath)) return undefined;
+  const pdfPath = resolve(dataDir(), pdfRel);
+  if (!existsSync(mdPath)) return existsSync(pdfPath) ? pdfRel : undefined;
+  // Re-render when the markdown is newer than the PDF, so a profile fix or
+  // re-queue never uploads a stale CV/letter.
+  if (existsSync(pdfPath) && statSync(pdfPath).mtimeMs >= statSync(mdPath).mtimeMs) {
+    return pdfRel;
+  }
   await renderPdf(readFileSync(mdPath, "utf8"), pdfPath);
   return pdfRel;
 }

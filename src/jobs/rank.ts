@@ -77,10 +77,23 @@ export function scoreJob(job: Job, config: AppConfig): Job {
   return job;
 }
 
-/** Apply hard filters (usable url, remote-only, excluded titles, on-topic title, min score). */
+/**
+ * True when the job is recent enough for the configured window (maxAgeDays;
+ * 0/unset = no limit). Uses the posting date when the source provides one,
+ * otherwise when we first discovered it — so undated jobs still age out.
+ */
+export function withinMaxAge(job: Job, maxAgeDays: number | undefined, now = Date.now()): boolean {
+  if (!maxAgeDays || maxAgeDays <= 0) return true;
+  const stamp = Date.parse(job.postedAt ?? "") || Date.parse(job.discoveredAt ?? "");
+  if (!Number.isFinite(stamp) || stamp === 0) return true; // no usable date — keep
+  return now - stamp <= maxAgeDays * 86_400_000;
+}
+
+/** Apply hard filters (usable url, freshness, remote-only, excluded titles, on-topic title, min score). */
 export function passesFilters(job: Job, config: AppConfig): boolean {
   const { search } = config;
   if (!job.url) return false; // nothing to apply to
+  if (!withinMaxAge(job, search.maxAgeDays)) return false;
   if (search.remoteOnly && !job.remote) return false;
 
   const title = job.title;

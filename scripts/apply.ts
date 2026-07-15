@@ -7,10 +7,11 @@
  *   npm run apply -- --min 30     # only jobs scoring >= 30
  *   npm run apply -- --all        # queue everything not yet handled
  */
-import { loadConfig } from "../src/jobs/config.ts";
+import { loadConfig, loadEnv } from "../src/jobs/config.ts";
 import { allJobs, getApplication, getJob } from "../src/jobs/store.ts";
 import { queueJobs } from "../src/jobs/pipeline.ts";
 import { buildReviewPage } from "../src/jobs/review.ts";
+import { applyCliProfileArg } from "../src/jobs/profiles.ts";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -18,7 +19,9 @@ function arg(name: string): string | undefined {
 }
 const hasFlag = (name: string) => process.argv.includes(`--${name}`);
 
-function main() {
+async function main() {
+  applyCliProfileArg(); // --profile <name> targets another person's data
+  loadEnv(); // AI cover letters read ANTHROPIC_API_KEY when present
   const config = loadConfig();
   const limit = hasFlag("all") ? Infinity : Number(arg("limit") ?? 20);
   const min = Number(arg("min") ?? config.search.minScore ?? 0);
@@ -34,7 +37,7 @@ function main() {
     return;
   }
 
-  const { queued, errors } = queueJobs(candidates, config);
+  const { queued, errors } = await queueJobs(candidates, config);
   for (const app of queued) {
     const job = getJob(app.jobId);
     console.log(`  queued [${job?.score ?? "?"}] ${job?.title} — ${job?.company}`);
@@ -47,4 +50,7 @@ function main() {
   console.log("Open it in a browser to apply, or run `npm run list` for the CLI view.");
 }
 
-main();
+main().catch((err) => {
+  console.error("apply failed:", err.message);
+  process.exit(1);
+});

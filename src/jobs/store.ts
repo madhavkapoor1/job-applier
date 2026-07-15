@@ -1,9 +1,12 @@
-import { mkdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
+import { copyFileSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { DATA_DIR } from "./config.ts";
+import { dataDir } from "./config.ts";
+import { writeFileAtomic } from "./fsatomic.ts";
 import type { Application, ApplicationStatus, Job } from "./types.ts";
 
-const DB_PATH = resolve(DATA_DIR, "db.json");
+function dbPath(): string {
+  return resolve(dataDir(), "db.json");
+}
 
 interface DB {
   jobs: Record<string, Job>;
@@ -11,54 +14,63 @@ interface DB {
   meta?: { lastDiscoveryAt?: string };
 }
 
-function ensureDir(): void {
-  mkdirSync(DATA_DIR, { recursive: true });
-}
-
 function emptyDb(): DB {
   return { jobs: {}, applications: {} };
 }
 
-function fileMtime(): number | undefined {
+function fileMtime(path: string): number | undefined {
   try {
-    return statSync(DB_PATH).mtimeMs;
+    return statSync(path).mtimeMs;
   } catch {
     return undefined; // file doesn't exist yet
   }
 }
 
-// In-process cache, invalidated whenever db.json changes on disk. The CLI and
+// In-process cache, invalidated whenever db.json changes on disk (the CLI and
 // the web server are separate processes writing the same file — without the
-// mtime check, one would read stale data and clobber the other's writes.
+// mtime check, one would read stale data and clobber the other's writes) or
+// when the active profile changes (each profile has its own db.json).
 let db: DB | undefined;
+let loadedPath: string | undefined;
 let loadedMtime: number | undefined;
 
 function read(): DB {
-  const mtime = fileMtime();
-  if (db && mtime === loadedMtime) return db;
-  ensureDir();
+  const path = dbPath();
+  const mtime = fileMtime(path);
+  if (db && path === loadedPath && mtime === loadedMtime) return db;
   if (mtime === undefined) {
     db = emptyDb();
-    loadedMtime = undefined;
-    return db;
+  } else {
+    try {
+      db = JSON.parse(readFileSync(path, "utf8")) as DB;
+      db.jobs ??= {};
+      db.applications ??= {};
+    } catch {
+      // Corrupt db (crash mid-write, disk fault): preserve the evidence before
+      // starting fresh — the next write() would otherwise persist an empty db
+      // over the top of the entire job + application history.
+      const backup = `${path}.corrupt-${Date.now()}`;
+      try {
+        copyFileSync(path, backup);
+        console.error(`db.json was unreadable — backed it up to ${backup} and started fresh.`);
+      } catch {
+        console.error("db.json was unreadable and could not be backed up; starting fresh.");
+      }
+      db = emptyDb();
+    }
   }
-  try {
-    db = JSON.parse(readFileSync(DB_PATH, "utf8")) as DB;
-    db.jobs ??= {};
-    db.applications ??= {};
-  } catch {
-    db = emptyDb();
-  }
+  loadedPath = path;
   loadedMtime = mtime;
   return db;
 }
 
 /** Persist the given DB object (always the one returned by read(), mutated in place). */
 function write(d: DB): void {
-  ensureDir();
-  writeFileSync(DB_PATH, JSON.stringify(d, null, 2));
+  const path = dbPath();
+  writeFileAtomic(path, JSON.stringify(d, null, 2));
   db = d;
-  loadedMtime = fileMtime();
+  loadedPath = path;
+  loadedMtime = fileMtime(path);
 }
 
 /** Insert/update jobs. Returns counts of new vs. already-seen. */

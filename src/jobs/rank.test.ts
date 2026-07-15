@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { scoreJob, passesFilters } from "./rank.ts";
+import { scoreJob, passesFilters, withinMaxAge } from "./rank.ts";
 import type { AppConfig, Job } from "./types.ts";
 
 function config(overrides: Partial<AppConfig["search"]> = {}, skills: string[] = []): AppConfig {
@@ -134,4 +134,40 @@ test("passesFilters: minScore threshold is enforced", () => {
   const j = scoreJob(job(), lo);
   assert.equal(passesFilters(j, lo), true);
   assert.equal(passesFilters(scoreJob(job(), hi), hi), false);
+});
+
+test("withinMaxAge: no limit (0/undefined) keeps everything", () => {
+  const old = job({ postedAt: "2020-01-01" });
+  assert.equal(withinMaxAge(old, 0), true);
+  assert.equal(withinMaxAge(old, undefined), true);
+});
+
+test("withinMaxAge: uses postedAt when present", () => {
+  const now = Date.parse("2026-07-01T00:00:00.000Z");
+  const fresh = job({ postedAt: "2026-06-25T00:00:00.000Z" });
+  const stale = job({ postedAt: "2026-06-01T00:00:00.000Z" });
+  assert.equal(withinMaxAge(fresh, 14, now), true);
+  assert.equal(withinMaxAge(stale, 14, now), false);
+});
+
+test("withinMaxAge: undated jobs age out by discoveredAt", () => {
+  const now = Date.parse("2026-07-01T00:00:00.000Z");
+  const staleDiscovery = job({ postedAt: undefined, discoveredAt: "2026-01-01T00:00:00.000Z" });
+  const freshDiscovery = job({ postedAt: undefined, discoveredAt: "2026-06-30T00:00:00.000Z" });
+  assert.equal(withinMaxAge(staleDiscovery, 14, now), false);
+  assert.equal(withinMaxAge(freshDiscovery, 14, now), true);
+});
+
+test("withinMaxAge: unparseable dates are kept rather than dropped", () => {
+  const weird = job({ postedAt: "yesterday-ish", discoveredAt: "???" });
+  assert.equal(withinMaxAge(weird, 14), true);
+});
+
+test("passesFilters: maxAgeDays drops old postings", () => {
+  const stale = scoreJob(
+    job({ postedAt: "2020-01-01T00:00:00.000Z", discoveredAt: "2020-01-01T00:00:00.000Z" }),
+    config(),
+  );
+  assert.equal(passesFilters(stale, config({ maxAgeDays: 14 })), false);
+  assert.equal(passesFilters(stale, config({ maxAgeDays: 0 })), true);
 });

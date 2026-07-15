@@ -14,8 +14,8 @@ country-specific, all-industry coverage when you add a free API key or two.
 
 > **The included example is configured for UK legal roles** (paralegal / compliance, broadening
 > into ESG & legal-tech) — but nothing is field- or country-specific. Set your own keywords,
-> countries, and skills in the **Profile** tab (or `job-applier.config.json`) and it retargets to
-> any field, anywhere.
+> countries, and skills in the **Profile** tab and it retargets to any field, anywhere — and each
+> person on the machine gets their own profile via the header switcher.
 
 ## Quick start
 
@@ -33,9 +33,11 @@ Then, in the browser:
 3. **Review & Apply** — copy your tailored cover letter, or click *Assisted apply* to open the
    form pre-filled, finish any custom questions + CAPTCHA, and submit.
 
-Everything is stored locally. Saving the profile creates `job-applier.config.json` (gitignored —
-it holds your personal details); until then the app runs on the committed
-`job-applier.config.example.json` template. The web form and CLI share the same config.
+Everything is stored locally. **Several people can share one install**: use the *"Who's
+applying?"* switcher in the header to add a person — each profile keeps its own details, searches,
+found jobs, and application queue under `data/profiles/<name>/` (gitignored). Until a profile is
+saved, the app runs on the committed `job-applier.config.example.json` template. The web form and
+CLI share the same active profile; CLI scripts accept `--profile <name>` for a one-off override.
 
 ### Non-technical users (Mac / Windows)
 
@@ -49,13 +51,33 @@ The recipient unzips and double-clicks **`start-mac.command`** (macOS) or **`sta
 (Windows). First run downloads a private copy of Node + the browser (no admin password), then
 opens the app. See `START-HERE-MAC.txt` in the package.
 
-## Countries & regions
+## Any field, any country
 
-Pick any combination of **UK · Canada · India · Dubai/UAE · United States · Global/Remote** in the
-Profile tab. Each region automatically points the job sources at the right place and gives
-in-region roles a ranking boost. Semantics are **"country + remote/global"** — region is a ranking
-nudge, never a hard filter, so remote and worldwide roles always stay eligible. See
-`src/jobs/regions.ts`.
+**Not technical, or not in tech?** The Profile tab has one-click **field presets** — Legal,
+Healthcare & Nursing, Finance, Teaching, Marketing, Sales, Admin, Hospitality, Engineering, and
+more — that fill in sensible keywords for you. Pick your field, pick your countries, save.
+
+**The universal source:** the free **Google Jobs (SerpAPI)** key pulls real listings for *any*
+profession in *any* country — it's the single key that makes "anywhere" actually work (the keyless
+boards lean towards remote tech). Add it in Profile → API keys.
+
+Pick any combination of **UK · Canada · India · Dubai/UAE · US · Australia · Germany · Ireland ·
+Singapore · New Zealand · Global/Remote** in the Profile tab (or type any city under "Specific
+cities"). Each region points the sources at the right place and gives in-region roles a ranking
+boost. Semantics are **"country + remote/global"** — region is a ranking nudge, never a hard
+filter, so remote and worldwide roles always stay eligible. See `src/jobs/regions.ts`.
+
+## Applying to many jobs quickly
+
+The **Review & Apply** tab has **"Prepare & open"**: it opens your ready applications in one
+browser window, each on its real application form with your name, email, phone, CV, and AI cover
+letter **already filled in** — you just review, answer any custom questions, pass the CAPTCHA, and
+click Submit. Works on Greenhouse, Lever, Ashby, and Workable forms (roughly 8 at a time).
+
+> **Why not fully automatic?** The tool never clicks Submit for you. Auto-submitted generic
+> applications get auto-rejected, and most portals have CAPTCHAs. The pre-fill removes the tedious
+> 90% while keeping the human check that actually lands interviews. Jobs that don't link to a
+> recognised application form still open individually with **Open & Apply**.
 
 ## Sources
 
@@ -76,7 +98,7 @@ self-disables (logged, never fatal) when it lacks a key or config.
 | `customfeeds` | **Any** board's RSS/Atom feed — paste a URL, no code (see below) |
 | `greenhouse` / `lever` / `ashby` / `workable` | Per-company ATS boards (optional — add company slugs) |
 
-**Keyed — add a free key in `.env` for on-site & country-specific coverage:**
+**Keyed — add a free key (Profile tab → API keys) for on-site & country-specific coverage:**
 
 | Source | Key(s) | Notes |
 | --- | --- | --- |
@@ -90,11 +112,17 @@ relevant key:
 
 1. Get a free key (e.g. Reed: <https://www.reed.co.uk/developers>; Adzuna:
    <https://developer.adzuna.com/>; SerpAPI: <https://serpapi.com/>).
-2. Copy `.env.example` to `.env` and paste your key in.
-3. Tick the source in the Profile tab (or set `enabled: true` in config) and search again.
+2. Paste it into **Profile tab → API keys** (it's written to `.env` for you — no file editing),
+   or edit `.env` by hand if you prefer (`cp .env.example .env`).
+3. Tick the source in the Profile tab and search again. The tab shows a "✓ key added" /
+   "key needed" badge next to each keyed source.
 
-> **Never commit your `.env` or `job-applier.config.json`** — both are gitignored because they hold
-> personal data and secrets. Each user supplies their own keys via `.env.example`.
+**AI-written cover letters:** add an `ANTHROPIC_API_KEY` in the same section and every prepared
+cover letter is written by Claude for that specific job (~a penny per letter). Without it,
+letters use the built-in template — everything still works offline.
+
+> **Never commit your `.env` or anything under `data/`** — both are gitignored because they hold
+> personal data and secrets. API keys are per-install and shared by all profiles on the machine.
 
 > Finding company slugs: Greenhouse `boards.greenhouse.io/acme` → `acme`; Lever
 > `jobs.lever.co/acme` → `acme`; Ashby `jobs.ashbyhq.com/acme` → `acme`.
@@ -106,8 +134,11 @@ npm run discover                       # fetch + rank + store jobs
 npm run apply -- --limit 20 --min 12   # generate materials, queue top matches (--all for everything)
 npm run list -- --jobs                 # all discovered jobs; or --status queued|applied|skipped|all
 npm run mark -- <jobId> applied "note" # set an application's status
-npm run review                         # rebuild data/review.html from the queue
+npm run review                         # rebuild the review page from the queue
 ```
+
+Every script accepts `--profile <name>` to target another person's profile for that run
+(otherwise they use whichever profile is active in the web app).
 
 | Command | What it does |
 | --- | --- |
@@ -194,9 +225,12 @@ Three ways, easiest first:
 
 ## Data & privacy
 
-Everything generated lives under `data/` (gitignored): `data/db.json` (jobs + applications),
-`data/applications/<id>/` (materials), `data/resume.pdf` (your uploaded CV), `data/review.html`.
-Nothing leaves your machine except the API calls each source makes to fetch jobs.
+Everything generated lives under `data/` (gitignored), one directory per person:
+`data/profiles/<name>/` holds that person's `config.json` (profile + search), `db.json` (jobs +
+applications), `applications/<id>/` (materials), `resume.pdf` (uploaded CV), and `review.html`.
+Writes are crash-safe (temp-file + rename), and a corrupted `db.json` is backed up — never
+silently reset. Nothing leaves your machine except the API calls each source makes to fetch jobs
+(and, if you add an Anthropic key, the cover-letter requests to Claude).
 
 ## License
 

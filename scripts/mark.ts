@@ -6,7 +6,10 @@
  */
 import { setStatus, getJob } from "../src/jobs/store.ts";
 import { buildReviewPage } from "../src/jobs/review.ts";
+import { applyCliProfileArg } from "../src/jobs/profiles.ts";
 import type { ApplicationStatus } from "../src/jobs/types.ts";
+
+applyCliProfileArg(); // --profile <name> targets another person's data
 
 const VALID: ApplicationStatus[] = ["queued", "applied", "skipped", "error"];
 
