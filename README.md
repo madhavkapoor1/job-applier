@@ -9,7 +9,7 @@ no account required.
   browser with your details pre-filled.
 - **CLI scripts** — the same engine for power users / automation.
 
-Works **out of the box with zero setup** thanks to six keyless job boards, and scales up to
+Works **out of the box with zero setup** thanks to several keyless job boards, and scales up to
 country-specific, all-industry coverage when you add a free API key or two.
 
 > **The included example is configured for UK legal roles** (paralegal / compliance, broadening
@@ -102,7 +102,7 @@ self-disables (logged, never fatal) when it lacks a key or config.
 
 | Source | Key(s) | Notes |
 | --- | --- | --- |
-| `adzuna` | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Broad all-industry aggregator; auto-targets UK/Canada/India/US from your regions |
+| `adzuna` | `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Broad all-industry aggregator; auto-targets your chosen countries (UK, Canada, India, US, Australia, Germany, Singapore, NZ) |
 | `serpapi` | `SERPAPI_KEY` | Google Jobs — the **only** source that reaches **Dubai/UAE** |
 | `reed` | `REED_API_KEY` | Reed.co.uk — best UK coverage incl. legal & on-site firms |
 | `usajobs` | `USAJOBS_API_KEY`, `USAJOBS_EMAIL` | US federal jobs (off by default) |
@@ -142,11 +142,11 @@ Every script accepts `--profile <name>` to target another person's profile for t
 
 | Command | What it does |
 | --- | --- |
-| `npm run discover` | Fan out across enabled sources → normalize → dedupe → score → filter → save to `data/db.json`. |
+| `npm run discover` | Fan out across enabled sources → normalize → dedupe → score → filter → save to the active profile's `db.json`. |
 | `npm run apply` | Generate tailored materials for top-scoring, unhandled jobs and queue them. Flags: `--limit N`, `--min N`, `--all`. |
 | `npm run list` | Show the review queue. `--status all\|applied\|skipped`, or `--jobs` for all discovered jobs. |
 | `npm run mark -- <id> <status> [note]` | Set an application's status (`applied` / `skipped`). |
-| `npm run review` | Rebuild `data/review.html` from the current queue. |
+| `npm run review` | Rebuild the active profile's `review.html` from the current queue. |
 | `npm run package` | Build the shareable `job-applier-mac.tar.gz`. |
 
 ## Tests
@@ -192,16 +192,18 @@ match inside unrelated words. Tune the weights there, or the thresholds (`minSco
 
 ## Materials
 
-Template + variable fill — `templates/resume.md` and `templates/cover-letter.md` with `{{token}}`
-placeholders (e.g. `{{job.title}}`, `{{profile.experience}}`). Rendered per job into
-`data/applications/<jobId>/`. If you upload a PDF CV, it's used as-is for the attachment. Edit the
-templates to change every future application.
+The **resume** is template + variable fill — `templates/resume.md` with `{{token}}` placeholders
+(e.g. `{{job.title}}`, `{{profile.experience}}`). The **cover letter** is AI-written per job when an
+`ANTHROPIC_API_KEY` is set, falling back to `templates/cover-letter.md` offline. Rendered per job
+into the active profile's `applications/<jobId>/`. If you upload a PDF CV, it's used as-is for the
+attachment. Edit the templates to change the fallback output.
 
 ## Architecture
 
 - **`src/jobs/`** — the engine: `pipeline.ts` (discover + queue), `sources/` (pluggable boards),
-  `normalize.ts`, `rank.ts`, `regions.ts`, `store.ts` (a single `data/db.json`), `materials.ts`,
-  `config.ts`.
+  `normalize.ts`, `rank.ts`, `regions.ts`, `presets.ts`, `store.ts` (per-profile `db.json`),
+  `materials.ts` + `ai.ts` (AI cover letters), `apply-assist.ts` (assisted apply),
+  `profiles.ts` (multi-user), `config.ts`.
 - **`src/app/`** — a thin Next.js (App Router) UI over the engine; server actions in `actions.ts`.
 - **`scripts/`** — CLI entry points run via `tsx`.
 

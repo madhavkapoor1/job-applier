@@ -1,8 +1,10 @@
 # Job Applier — Complete Guide
 
-A personal tool that **finds UK legal jobs, ranks them against your profile, and writes a
-tailored CV + cover letter for each one** so you can apply in a couple of minutes instead of
-twenty. Built for a paralegal broadening into ESG / legal-tech / AI, but easily retargeted.
+A personal tool that **finds jobs, ranks them against your profile, and writes a tailored CV +
+cover letter for each one** so you can apply in a couple of minutes instead of twenty. It works
+for **any profession, in any country** — the example is set up for a UK paralegal broadening into
+ESG / legal-tech / AI, but a one-click preset retargets it to nursing, finance, teaching, software,
+and more (Part 6).
 
 There are two ways to use it:
 - **The website** (no tech skills needed) — a simple 3-step page in your browser.
@@ -12,14 +14,18 @@ There are two ways to use it:
 
 ## Part 1 — What it actually does
 
-1. **Finds jobs** automatically from several UK sources every time you open it.
+1. **Finds jobs** automatically from several sources every time you open it.
 2. **Ranks** each job 0–100 on how well it fits your skills and keywords.
-3. **Auto-writes** a tailored CV + cover letter for your best matches.
-4. **Tracks** what you've applied to so you never apply twice.
+3. **Auto-writes** a tailored CV + cover letter for your best matches. (Add a free Claude key and
+   each cover letter is written by AI for that specific job — see Part 4.)
+4. **Speeds up applying** — the "Prepare & open" button on Review & Apply opens several forms at
+   once, each pre-filled with your details, CV, and cover letter.
+5. **Tracks** what you've applied to so you never apply twice, and lets several people each keep
+   their own profile.
 
-**What it does NOT do:** it does not click "submit" on application forms for you. You open the
-job, paste in the ready-made CV + cover letter, and submit — that final human step keeps quality
-high (auto-submitted generic applications get auto-rejected, and that matters for legal roles).
+**What it does NOT do:** it does not click "submit" for you. It pre-fills the form; you review,
+answer any custom questions, and submit — that final human step keeps quality high (auto-submitted
+generic applications get auto-rejected).
 
 ### Where it looks for jobs
 
@@ -70,7 +76,7 @@ Same engine, run from a terminal in the project folder:
 | `npm run apply` | Write CV + cover letter for the top matches (`-- --limit 30`, `-- --all`) |
 | `npm run list` | Show your review queue (`-- --jobs` for all found jobs) |
 | `npm run mark -- <id> applied` | Record that you applied (or `skipped`) |
-| `npm run review` | Build a standalone `data/review.html` page of the queue |
+| `npm run review` | Build a standalone `review.html` page of your queue (in your profile folder) |
 
 ---
 
@@ -113,26 +119,29 @@ npm install
 
 ## Part 6 — Retargeting it (different field or country)
 
-It's currently set for UK legal roles, but it's general. Edit `job-applier.config.json` (or just
-use the Profile form):
-- **keywords / skills** drive what's searched and how jobs are scored.
-- **locations** — e.g. `["London", "United Kingdom", "Remote"]`. A country name keeps searches
-  country-wide; a city narrows to that city.
-- **The Muse category** (`sources.themuse.category`) — e.g. `"Software Engineering"`,
-  `"Finance"`, etc.
-- **company career pages** — add any company's Greenhouse/Lever/Ashby/Workable handle (from
-  their careers URL) under `sources`.
+The example is set up for UK legal roles, but it works for **any profession, anywhere** — all from
+the **Your Profile** tab, no files to edit:
+- **Quick start — pick your field**: one click fills in sensible keywords for Legal, Healthcare &
+  Nursing, Finance, Teaching, Marketing, Sales, Admin, Engineering, and more. Edit them after if
+  you like.
+- **Countries / regions**: tick any of UK, Canada, India, Dubai/UAE, US, Australia, Germany,
+  Ireland, Singapore, New Zealand, or Global/Remote — or type a specific city.
+- **Different people**: use the **"Who's applying?"** switcher at the top to add another person —
+  each gets their own profile, searches, and application queue.
+- The single biggest coverage upgrade for any field/country is the free **Google Jobs (SerpAPI)**
+  key — add it under Profile → API keys (Part 4).
 
 ---
 
 ## Part 7 — Your data & privacy
 
-- All personal details and job data live **on this computer only**, in `data/` and
-  `job-applier.config.json`. Both are excluded from git, so they're never committed/shared by
-  accident.
+- All personal details and job data live **on this computer only**, under `data/profiles/<name>/`
+  (one folder per person), and your API keys live in `.env`. Both are excluded from git, so they're
+  never committed or shared by accident.
 - The committed `job-applier.config.example.json` is just a blank template.
-- The app talks to public job-board APIs to fetch listings; it does not send your CV anywhere —
-  you do the actual submitting.
+- The app talks to public job-board APIs to fetch listings. It does not send your CV anywhere — you
+  do the actual submitting. (If you add a Claude key for AI cover letters, only the job description
+  and your profile are sent to write each letter.)
 
 ---
 

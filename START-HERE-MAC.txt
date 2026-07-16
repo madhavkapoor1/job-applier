@@ -32,20 +32,24 @@ FIRST TIME: IF DOUBLE-CLICKING DOESN'T WORK
 
 
 USING IT  (three tabs in the browser)
-  1. Your Profile  — fill in your details once, click Save.
+  1. Your Profile  — fill in your details once. Tip: click a
+                     field (Legal, Nursing, Finance, ...) under
+                     "Quick start" to fill in keywords. Click Save.
   2. Find Jobs     — it searches automatically and prepares your
                      best matches.
-  3. Review & Apply— open each job, copy the cover letter + CV,
-                     paste into their form, submit, mark as applied.
+  3. Review & Apply— use "Prepare & open" to open several forms at
+                     once, pre-filled with your details + CV + cover
+                     letter. Review, submit, mark as applied.
 
 
 GET LOTS MORE JOBS  (free, 2 minutes — optional but recommended)
-  1. Go to  https://www.reed.co.uk/developers  and sign up (free).
-  2. Create an API key and copy it.
-  3. Open the file named  .env  in this folder (TextEdit is fine).
-  4. Put your key after REED_API_KEY=  so it looks like:
-       REED_API_KEY=your-key-here
-  5. Save, then stop and re-start the app.
+  Do it right inside the app — no files to edit:
+  1. Go to  https://www.reed.co.uk/developers  and sign up (free);
+     create an API key and copy it. (For jobs in ANY country/field,
+     get a free  https://serpapi.com  key too — that's the big one.)
+  2. In the app, open  Your Profile  and scroll to  "API keys".
+  3. Paste the key into the matching box and click  Save keys.
+     That's it — no restart; the next search uses it.
 
 
 YOUR PRIVACY

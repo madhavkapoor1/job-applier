@@ -63,7 +63,8 @@ build` still runs a full tsc typecheck for web changes.
   so a source only fetches and maps to `RawJob`. Keyed sources (`reed`, `adzuna`, `usajobs`,
   `serpapi`) return `false` from `isEnabled` when their env keys are missing, so the pipeline
   silently skips them; keyless sources (`themuse`, the ATS boards, etc.) just need company handles
-  or are always on. **Currently configured for UK legal roles** — see `job-applier.config.json`.
+  or are always on. **The committed example targets UK legal roles** — see
+  `job-applier.config.example.json`; the live per-profile config lives in `data/profiles/<slug>/config.json`.
 - `normalize.ts` — `finalize()` assigns a stable `id` (sha1 of company|title|location, so re-runs
   and cross-source duplicates collapse), strips HTML, decodes entities, infers `remote`.
   `dedupe()` keeps the richest copy.
