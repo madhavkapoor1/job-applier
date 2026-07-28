@@ -52,11 +52,12 @@ locations, etc.). Click **Save profile**.
 
 ### Step 2 — Find Jobs
 The app checks for new jobs automatically when you open it (you'll see "Checking for new jobs…").
-You can also click **Check for new jobs** any time. Jobs appear ranked by match score. The app
-also **auto-prepares** ready-to-send applications for your top ~15 matches.
+You can also click **Check for new jobs** any time. Jobs appear ranked by match score. Click
+**Prepare application** on the ones you like — that writes a tailored CV + cover letter and moves
+them to **Review & Apply**.
 
 ### Step 3 — Review & Apply
-This tab holds your ready-to-send applications. For each one:
+This tab holds the applications you prepared, ready to send. For each one:
 1. Click **Open & Apply ↗** — the real job posting opens in a new tab.
 2. Switch between **Cover letter** and **Resume**, click **Copy**.
 3. Paste into the company's application form and submit.

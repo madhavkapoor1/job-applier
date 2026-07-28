@@ -52,19 +52,22 @@ export async function aiCoverLetter(job: Job, profile: Profile): Promise<string 
       system:
         "You write concise, professional cover letters for job applications. " +
         "Use only facts provided about the candidate — never invent employers, qualifications, dates, or achievements. " +
+        "Ground the opening in a REAL detail from the job posting (their mission, product, or what the team does) to show the letter was written for this specific company — but never fabricate a detail that isn't in the posting. " +
         "Match the tone and conventions of the job's market (e.g. UK roles get UK English and conventions). " +
         "Output plain text only: no markdown, no placeholders, no commentary before or after the letter.",
       messages: [
         {
           role: "user",
           content:
-            `Write a cover letter (250-320 words) from this candidate for this job.\n\n` +
+            `Write a cover letter of about 150 words (three short paragraphs) from this candidate for this job.\n\n` +
             `# Candidate\n${profileSummary(profile)}\n\n` +
             `# Job\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location}\n\n` +
             `Description:\n${description}\n\n` +
-            `Start with today's greeting to the hiring team, connect the candidate's real experience to what ` +
-            `this specific role asks for, and sign off with the candidate's name. If the description is thin, ` +
-            `lean on the job title and the candidate's strengths rather than guessing details.`,
+            `Structure it as exactly three paragraphs after the greeting:\n` +
+            `1. Why the candidate is drawn to THIS company — reference a specific, real detail from the posting above (their mission/product/what they do). If the posting is thin, reference the role itself rather than inventing a detail.\n` +
+            `2. How the candidate would contribute, tying their real skills and experience to what this role asks for.\n` +
+            `3. A brief, warm closing.\n\n` +
+            `Begin with today's greeting to the hiring team and sign off with the candidate's name. Keep it to roughly 150 words total.`,
         },
       ],
     });

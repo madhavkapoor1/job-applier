@@ -122,8 +122,8 @@ build` still runs a full tsc typecheck for web changes.
 - **Personal data:** everything under `data/` is gitignored — profiles, configs, keys' effects.
   `job-applier.config.example.json` is the committed template; `loadConfig()` falls back to it
   until the active profile saves a config, and `isPlaceholderProfile()` (no saved config, or
-  template strings) routes first-time web users to the Profile tab and blocks auto-prepare.
-  `.env` is also gitignored; the web UI writes keys into it via `envfile.ts`.
+  template strings) routes first-time web users to the Profile tab. `.env` is also gitignored;
+  the web UI writes keys into it via `envfile.ts`.
 - **Store concurrency:** `store.ts` invalidates its in-process cache via db.json mtime so the CLI
   and web server can run simultaneously without clobbering each other — don't reintroduce a plain
   module-level cache. Use `saveApplications()`/`queueJobs()` for batches (one write), not loops of

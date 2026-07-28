@@ -42,8 +42,8 @@ export default function QueuePanel({
   if (state.queue.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700">
-        Nothing here yet. Save your profile and the app will auto-prepare applications for your top
-        matches — or go to <strong>Find Jobs</strong> and click “Prepare application”.
+        Nothing here yet. Go to <strong>Find Jobs</strong> and click “Prepare application” on the
+        roles you like — they’ll show up here with a ready-to-send CV and cover letter.
       </p>
     );
   }
@@ -60,7 +60,7 @@ export default function QueuePanel({
         </div>
       )}
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        These applications were prepared automatically for your best matches.
+        The applications you prepared, ready to send.
         {state.aiEnabled && " Cover letters are AI-written for each specific job. ✨"}
         {" "}For each one: open the posting, copy your cover letter and resume into their form,
         submit, then mark it applied.

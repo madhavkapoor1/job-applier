@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { scoreJob, passesFilters, withinMaxAge } from "./rank.ts";
+import { scoreJob, passesFilters, withinMaxAge, matchesLocation } from "./rank.ts";
 import type { AppConfig, Job } from "./types.ts";
 
 function config(overrides: Partial<AppConfig["search"]> = {}, skills: string[] = []): AppConfig {
@@ -170,4 +170,34 @@ test("passesFilters: maxAgeDays drops old postings", () => {
   );
   assert.equal(passesFilters(stale, config({ maxAgeDays: 14 })), false);
   assert.equal(passesFilters(stale, config({ maxAgeDays: 0 })), true);
+});
+
+test("matchesLocation: no geographic intent keeps everything", () => {
+  const j = job({ location: "Remote", remote: true });
+  assert.equal(matchesLocation(j, config().search), true);
+});
+
+test("matchesLocation: keeps jobs in a chosen city, drops elsewhere", () => {
+  const s = config({ locations: ["Vancouver", "Toronto"], regions: ["canada"] }).search;
+  assert.equal(matchesLocation(job({ location: "Vancouver, BC" }), s), true);
+  assert.equal(matchesLocation(job({ location: "Toronto, ON" }), s), true);
+  assert.equal(matchesLocation(job({ location: "Austin, TX" }), s), false);
+});
+
+test("matchesLocation: keeps jobs anywhere in a chosen region", () => {
+  const s = config({ regions: ["canada"] }).search;
+  assert.equal(matchesLocation(job({ location: "Calgary, Alberta" }), s), true);
+  assert.equal(matchesLocation(job({ location: "London, UK" }), s), false);
+});
+
+test("matchesLocation: worldwide-remote is dropped unless the user opts into remote", () => {
+  const strict = config({ regions: ["canada"] }).search;
+  assert.equal(matchesLocation(job({ location: "Remote", remote: true }), strict), false);
+  const openToRemote = config({ regions: ["canada", "global"] }).search;
+  assert.equal(matchesLocation(job({ location: "Remote", remote: true }), openToRemote), true);
+});
+
+test("matchesLocation: a remote role that also names a chosen place still passes", () => {
+  const s = config({ regions: ["canada"] }).search;
+  assert.equal(matchesLocation(job({ location: "Remote - Canada", remote: true }), s), true);
 });

@@ -2,7 +2,7 @@
 import { loadConfig, loadEnv, isPlaceholderProfile, uploadedResumePath, env } from "./config.ts";
 import { allJobs, allApplications, getJob, getLastDiscovery } from "./store.ts";
 import { readMaterial } from "./materials.ts";
-import { withinMaxAge } from "./rank.ts";
+import { withinMaxAge, matchesLocation } from "./rank.ts";
 import { ALL_SOURCES } from "./sources/index.ts";
 import { isDirectSource, isAssistable } from "./source-meta.ts";
 import { activeProfile, listProfiles, type ProfileInfo } from "./profiles.ts";
@@ -113,6 +113,7 @@ export function getDashboardState(): DashboardState {
   const jobs = allJobs()
     .filter((j) => !queuedIds.has(j.id))
     .filter((j) => withinMaxAge(j, config.search.maxAgeDays))
+    .filter((j) => matchesLocation(j, config.search))
     .sort((a, b) => b.score - a.score)
     .slice(0, JOB_LIST_LIMIT)
     .map(toCard);

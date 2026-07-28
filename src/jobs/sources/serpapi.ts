@@ -1,8 +1,24 @@
 import { fetchJson } from "../http.ts";
 import { env } from "../config.ts";
-import { narrowCity } from "../locations.ts";
+import { parseLocations } from "../locations.ts";
 import { googleLocations } from "../regions.ts";
 import type { AppConfig, JobSource, RawJob } from "../types.ts";
+
+/**
+ * Which Google Jobs `location` string(s) to search, in priority order:
+ *   1. Specific cities the user typed — these win, so "Manchester" narrows the
+ *      search even when a country/region is also selected. (This was the bug:
+ *      a selected region used to make the city be ignored.)
+ *   2. Otherwise, one location per selected region.
+ *   3. Otherwise, the configured source location, or worldwide.
+ * Exported for unit testing (no network).
+ */
+export function pickGoogleLocations(config: AppConfig): (string | undefined)[] {
+  const { cities } = parseLocations(config.search.locations);
+  if (cities.length) return cities;
+  if (config.search.regions?.length) return googleLocations(config.search.regions);
+  return [config.sources.serpapi?.location || undefined];
+}
 
 interface SerpJob {
   title: string;
@@ -25,14 +41,8 @@ export const serpapi: JobSource = {
   isEnabled: (c) => c.sources.serpapi?.enabled === true && !!env("SERPAPI_KEY"),
   async fetch(config: AppConfig): Promise<RawJob[]> {
     const key = env("SERPAPI_KEY")!;
-    // One Google Jobs location per selected region (Dubai/UAE only works here,
-    // since Adzuna has no UAE endpoint). When no region is set, fall back to an
-    // explicit source location, then a configured city, then worldwide.
-    let locations = googleLocations(config.search.regions);
-    if (!config.search.regions?.length) {
-      const fallback = config.sources.serpapi?.location ?? narrowCity(config.search.locations);
-      locations = [fallback || undefined];
-    }
+    // Specific city wins over region; region wins over worldwide. See pickGoogleLocations.
+    const locations = pickGoogleLocations(config);
 
     // keyword × location fan-out. Each combo is one SerpAPI call — mind the
     // free tier (100/mo) when combining many keywords with many regions.

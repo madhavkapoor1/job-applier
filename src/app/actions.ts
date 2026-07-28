@@ -7,21 +7,18 @@ import {
   loadEnv,
   saveConfig,
   resetConfigCache,
-  isPlaceholderProfile,
   dataDir,
   UPLOADED_RESUME_REL,
   uploadedResumePath,
 } from "../jobs/config.ts";
-import { runDiscovery, queueJob, queueJobs, type DiscoverySummary } from "../jobs/pipeline.ts";
+import { runDiscovery, queueJob, type DiscoverySummary } from "../jobs/pipeline.ts";
 import {
   getJob,
   setStatus,
   getLastDiscovery,
-  allJobs,
   allApplications,
   getApplication,
 } from "../jobs/store.ts";
-import { passesFilters } from "../jobs/rank.ts";
 import { ensureApplicationPdfs } from "../jobs/pdf.ts";
 import { assistedApply, assistedApplyBatch, type BatchApplyItem } from "../jobs/apply-assist.ts";
 import { saveEnvKeys } from "../jobs/envfile.ts";
@@ -87,31 +84,6 @@ export async function discoverAction(): Promise<{
 // so opening/reloading the app is instant when results are already fresh.
 const STALE_MS = 3 * 60 * 60 * 1000;
 
-// Keep this many ready-to-send applications waiting in the review queue.
-const QUEUE_TARGET = 15;
-
-/**
- * Auto-prepare: top the review queue back up to QUEUE_TARGET by generating
- * tailored materials for the next-best un-handled jobs (one db write via
- * queueJobs). No-op until a real profile is saved, so we never write
- * materials with placeholder details. Candidates must pass the CURRENT
- * filters (min score, excluded titles, freshness) — not just the ones in
- * force when they were discovered.
- */
-async function topUpQueue(config: AppConfig): Promise<void> {
-  if (isPlaceholderProfile(config)) return;
-  const queued = allApplications().filter((a) => a.status === "queued").length;
-  const need = QUEUE_TARGET - queued;
-  if (need <= 0) return;
-  const candidates = allJobs()
-    .filter((j) => !getApplication(j.id))
-    .filter((j) => passesFilters(j, config))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, need);
-  const { errors } = await queueJobs(candidates, config);
-  for (const e of errors) console.warn(`  [auto-prepare] ${e.title}: ${e.error}`);
-}
-
 // Share one in-flight discovery across concurrent callers (two tabs, dev
 // StrictMode remounts) instead of fetching every source twice in parallel.
 let discovering: Promise<{ summary: DiscoverySummary }> | null = null;
@@ -140,7 +112,9 @@ export async function ensureFreshAction(): Promise<{
   if (stale) {
     ({ summary } = await discoverShared(config));
   }
-  await topUpQueue(config); // auto-prepare ready-to-send applications
+  // No auto-prepare: jobs enter the review queue only when the user clicks
+  // "Prepare application" (or assisted apply), so nothing is generated behind
+  // their back — and no AI cover-letter spend they didn't ask for.
   return { ran: stale, summary, state: getDashboardState() };
 }
 
@@ -345,7 +319,6 @@ export async function saveProfileAction(
     const current = loadConfig();
     const next = mergeConfig(current, payload);
     saveConfig(next); // validates name/email/keywords
-    await topUpQueue(next); // now that the profile is real, prepare ready-to-send applications
     return { ok: true, state: getDashboardState() };
   } catch (err) {
     return { ok: false, error: (err as Error).message };

@@ -1,6 +1,7 @@
-import { locationInRegions } from "./regions.ts";
+import { locationInRegions, includesGlobal } from "./regions.ts";
+import { parseLocations } from "./locations.ts";
 import { isDirectSource } from "./source-meta.ts";
-import type { AppConfig, Job } from "./types.ts";
+import type { AppConfig, Job, SearchConfig } from "./types.ts";
 
 /**
  * Whole-word(ish) match: the term must be bounded by non-alphanumerics (or
@@ -89,12 +90,38 @@ export function withinMaxAge(job: Job, maxAgeDays: number | undefined, now = Dat
   return now - stamp <= maxAgeDays * 86_400_000;
 }
 
-/** Apply hard filters (usable url, freshness, remote-only, excluded titles, on-topic title, min score). */
+/**
+ * Location gate: when the user has expressed WHERE they want to work (specific
+ * cities, or a country region), keep only jobs that actually fit — not every
+ * worldwide-remote posting the keyless boards return. Remote roles pass only
+ * when the user opts into remote (the "Global/Remote" region, or a remote word
+ * in their cities list). With no geographic intent at all, everything passes.
+ */
+export function matchesLocation(job: Job, search: SearchConfig): boolean {
+  const { cities, remote: remoteTyped } = parseLocations(search.locations);
+  const regions = search.regions ?? [];
+  const placeRegions = regions.filter((r) => r !== "global");
+  const hasGeoIntent = cities.length > 0 || placeRegions.length > 0;
+  if (!hasGeoIntent) return true; // user hasn't said where — don't constrain
+
+  const loc = (job.location || "").toLowerCase();
+  const isRemote = job.remote || /\b(remote|anywhere|work from home|wfh|distributed)\b/i.test(loc);
+  const wantsRemote = remoteTyped || includesGlobal(regions);
+
+  if (cities.some((c) => c && loc.includes(c.toLowerCase()))) return true; // in a chosen city
+  if (locationInRegions(job.location, placeRegions)) return true; // in a chosen country
+  if (isRemote && wantsRemote) return true; // remote, and user is open to remote
+  if (!loc.trim() && !isRemote) return true; // location unknown — don't drop on a guess
+  return false;
+}
+
+/** Apply hard filters (usable url, freshness, remote-only, location, excluded titles, on-topic title, min score). */
 export function passesFilters(job: Job, config: AppConfig): boolean {
   const { search } = config;
   if (!job.url) return false; // nothing to apply to
   if (!withinMaxAge(job, search.maxAgeDays)) return false;
   if (search.remoteOnly && !job.remote) return false;
+  if (!matchesLocation(job, search)) return false;
 
   const title = job.title;
   if (search.excludeTitleKeywords?.length) {

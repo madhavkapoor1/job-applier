@@ -399,8 +399,8 @@ export default function ProfileForm({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Specific cities (optional)" hint="Comma-separated — narrows within the regions above. Blank = country-wide.">
-            <input className={inputClass} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="London, Toronto" />
+          <Field label="Specific cities (optional)" hint="Narrows Reed/Adzuna/Google Jobs to these cities and ranks them higher. Add the country for precision (e.g. 'Manchester, UK'). Remote boards still show remote roles.">
+            <input className={inputClass} value={locations} onChange={(e) => setLocations(e.target.value)} placeholder="Manchester, UK" />
           </Field>
           <Field label="Minimum match score" hint="Higher = stricter. 12 is a good default.">
             <input type="number" className={inputClass} value={minScore} onChange={(e) => setMinScore(e.target.value)} />
